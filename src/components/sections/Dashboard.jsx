@@ -117,6 +117,12 @@ const Dashboard = () => {
     return labels[status] || status
   }
 
+  const formatTime = (timeString) => {
+    if (!timeString) return ''
+    // Remove seconds from time format (HH:MM:SS -> HH:MM)
+    return timeString.substring(0, 5)
+  }
+
   const groupAppointmentsByStatus = (appointments) => {
     const grouped = appointments.reduce((acc, appointment) => {
       const status = appointment.status
@@ -206,7 +212,7 @@ const Dashboard = () => {
                 <div className="appointments-list">
                   {appointments.map(appointment => (
                     <div key={appointment.id} className="appointment-item">
-                      <div className="appointment-time">{appointment.appointment_time}</div>
+                      <div className="appointment-time">{formatTime(appointment.appointment_time)}</div>
                       <div className="appointment-details">
                         <div className="appointment-client">{appointment.client_name}</div>
                         <div className="appointment-service">{appointment.services_list}</div>
