@@ -23,7 +23,10 @@ const AppointmentsSection = () => {
     
     return (services || [])
       .filter(service => teamMember.specialties.includes(service.id))
-      .map(service => ({ value: service.id, label: `${service.name} - R$ ${service.price?.toFixed(2) || '0.00'}` }))
+      .map(service => ({ 
+        value: service.id, 
+        label: `${service.name} - R$ ${parseFloat(service.price || 0).toFixed(2)}` 
+      }))
   }
 
   // Function to get Portuguese status label from English key
@@ -192,9 +195,10 @@ const AppointmentsSection = () => {
 
   const loadClients = async () => {
     try {
-      const clientsResponse = await apiService.get('/api/clients/')
-      console.log('Loaded clients from backend:', clientsResponse)
-      const clientsData = Array.isArray(clientsResponse) ? clientsResponse : []
+      const response = await apiService.get('/api/clients/')
+      console.log('Loaded clients from backend:', response)
+      // Handle paginated response from Django REST framework
+      const clientsData = response.results || response || []
       setClients(clientsData)
     } catch (error) {
       console.error('Error loading clients:', error)
@@ -204,10 +208,19 @@ const AppointmentsSection = () => {
 
   const loadTeamMembers = async () => {
     try {
-      const teamResponse = await apiService.get('/api/team/')
-      console.log('Loaded team members from backend:', teamResponse)
-      const teamData = Array.isArray(teamResponse) ? teamResponse : []
-      setTeamMembers(teamData)
+      const response = await apiService.get('/api/team/')
+      console.log('Loaded team members from backend:', response)
+      // Handle paginated response from Django REST framework
+      const teamData = response.results || response || []
+      // Ensure we have the specialties data for filtering services
+      const processedTeamData = teamData.map(member => ({
+        ...member,
+        specialties: member.specialties ? member.specialties.map(s => 
+          // Handle both cases: s could be an object with id, or just an id
+          typeof s === 'object' ? s.id : s
+        ) : []
+      }))
+      setTeamMembers(processedTeamData)
     } catch (error) {
       console.error('Error loading team members:', error)
       setTeamMembers([])
@@ -216,9 +229,10 @@ const AppointmentsSection = () => {
 
   const loadServices = async () => {
     try {
-      const servicesResponse = await apiService.get('/api/services/')
-      console.log('Loaded services from backend:', servicesResponse)
-      const servicesData = Array.isArray(servicesResponse) ? servicesResponse : []
+      const response = await apiService.get('/api/services/')
+      console.log('Loaded services from backend:', response)
+      // Handle paginated response from Django REST framework
+      const servicesData = response.results || response || []
       setServices(servicesData)
     } catch (error) {
       console.error('Error loading services:', error)
@@ -299,7 +313,7 @@ const AppointmentsSection = () => {
       selectedServices.forEach(serviceId => {
         const service = services.find(s => s.id === parseInt(serviceId))
         if (service) {
-          totalPrice += service.price
+          totalPrice += parseFloat(service.price || 0)
           serviceNames.push(service.name)
         }
       })

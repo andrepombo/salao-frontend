@@ -102,7 +102,10 @@ const TeamSection = () => {
       label: 'Especialidades',
       type: 'multiselect',
       required: false,
-      options: services.map(service => ({ value: service.id, label: service.name })),
+      options: (services || []).map(service => ({ 
+        value: service.id, 
+        label: service.name ? String(service.name) : `Serviço ${service.id}` 
+      })),
       placeholder: 'Selecione as especialidades do profissional',
       helpText: 'Serviços que este profissional pode realizar'
     }
@@ -155,7 +158,17 @@ const TeamSection = () => {
   }
 
   const handleEdit = (member) => {
-    setEditingMember(member)
+    // Transform member data to ensure specialties contains only IDs, not full objects
+    const transformedMember = {
+      ...member,
+      specialties: member.specialties ? member.specialties.map(specialty => 
+        // Handle both cases: specialty could be an object with id, or just an id
+        typeof specialty === 'object' ? specialty.id : specialty
+      ) : []
+    }
+    console.log('Original member data:', member)
+    console.log('Transformed member data for editing:', transformedMember)
+    setEditingMember(transformedMember)
     setShowForm(true)
   }
 
