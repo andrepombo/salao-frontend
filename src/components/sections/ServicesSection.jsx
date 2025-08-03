@@ -11,8 +11,8 @@ const ServicesSection = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const columns = [
-    { key: 'name', label: 'Service Name' },
-    { key: 'service_type', label: 'Type', type: 'badge', badgeColor: (value) => {
+    { key: 'name', label: 'Nome do Serviço' },
+    { key: 'service_type', label: 'Tipo', type: 'badge', badgeColor: (value) => {
       const colors = {
         'cabelo': 'info',
         'unhas': 'success',
@@ -216,19 +216,19 @@ const ServicesSection = () => {
   return (
     <div>
       <DataTable
-        title="Services"
+        title="Serviços"
         columns={columns}
         data={services}
         onAdd={handleAdd}
         onEdit={handleEdit}
         onDelete={handleDelete}
         isLoading={isLoading}
-        emptyMessage="No services registered yet. Add your first service to get started!"
+        emptyMessage="Nenhum serviço cadastrado ainda. Adicione seu primeiro serviço para começar!"
       />
 
       {showForm && (
         <MuiCrudForm
-          title="Service"
+          title="Serviço"
           fields={formFields}
           data={editingService}
           onSubmit={handleSubmit}

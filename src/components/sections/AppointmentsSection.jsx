@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import DataTable from '../DataTable'
 import MuiCrudForm from '../MuiCrudForm'
 import { apiService } from '../../services/api'
@@ -12,6 +12,19 @@ const AppointmentsSection = () => {
   const [showForm, setShowForm] = useState(false)
   const [editingAppointment, setEditingAppointment] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedTeamMember, setSelectedTeamMember] = useState(null)
+
+  // Function to get available services for a selected team member
+  const getAvailableServices = (teamMemberId) => {
+    if (!teamMemberId) return []
+    
+    const teamMember = teamMembers.find(member => member.id === parseInt(teamMemberId))
+    if (!teamMember || !teamMember.specialties) return []
+    
+    return services
+      .filter(service => teamMember.specialties.includes(service.id))
+      .map(service => ({ value: service.id, label: `${service.name} - R$ ${service.price.toFixed(2)}` }))
+  }
 
   const columns = [
     { key: 'client_name', label: 'Cliente' },
@@ -33,7 +46,7 @@ const AppointmentsSection = () => {
     { key: 'services_list', label: 'Serviços' }
   ]
 
-  const formFields = [
+  const formFields = useMemo(() => [
     {
       name: 'client_id',
       label: 'Cliente',
@@ -64,7 +77,21 @@ const AppointmentsSection = () => {
           }
         }
       },
-      options: teamMembers.map(member => ({ value: member.id, label: member.name }))
+      options: teamMembers.map(member => ({ value: member.id, label: member.name })),
+      onChange: (value) => {
+        setSelectedTeamMember(value)
+      }
+    },
+    {
+      name: 'services',
+      label: 'Serviços',
+      type: 'multiselect',
+      required: true,
+      fullWidth: true,
+      options: getAvailableServices(selectedTeamMember),
+      placeholder: selectedTeamMember ? 'Selecione os serviços' : 'Selecione primeiro um profissional',
+      helpText: 'Serviços que serão realizados no agendamento',
+      disabled: !selectedTeamMember
     },
     {
       name: 'appointment_date',
@@ -104,7 +131,7 @@ const AppointmentsSection = () => {
       fullWidth: true,
       placeholder: 'Observações adicionais para o agendamento'
     }
-  ]
+  ], [clients, teamMembers, services, selectedTeamMember])
 
   useEffect(() => {
     loadAppointments()
@@ -186,8 +213,16 @@ const AppointmentsSection = () => {
   const loadTeamMembers = async () => {
     try {
       const mockTeamMembers = [
-        { id: 1, name: 'Ana Costa' },
-        { id: 2, name: 'Carlos Mendes' }
+        { 
+          id: 1, 
+          name: 'Ana Costa',
+          specialties: [1, 2, 3] // Corte Feminino, Corte Masculino, Coloração
+        },
+        { 
+          id: 2, 
+          name: 'Carlos Mendes',
+          specialties: [4, 5] // Manicure, Barba Completa
+        }
       ]
       setTeamMembers(mockTeamMembers)
     } catch (error) {
@@ -201,9 +236,9 @@ const AppointmentsSection = () => {
       const mockServices = [
         { id: 1, name: 'Corte Feminino', price: 45.00 },
         { id: 2, name: 'Corte Masculino', price: 25.00 },
-        { id: 3, name: 'Coloração Completa', price: 120.00 },
+        { id: 3, name: 'Coloração', price: 120.00 },
         { id: 4, name: 'Manicure', price: 20.00 },
-        { id: 5, name: 'Barba Completa', price: 30.00 }
+        { id: 5, name: 'Pedicure', price: 25.00 }
       ]
       setServices(mockServices)
     } catch (error) {
@@ -214,11 +249,13 @@ const AppointmentsSection = () => {
 
   const handleAdd = () => {
     setEditingAppointment(null)
+    setSelectedTeamMember(null) // Reset selected team member for new appointment
     setShowForm(true)
   }
 
   const handleEdit = (appointment) => {
     setEditingAppointment(appointment)
+    setSelectedTeamMember(appointment.team_member_id) // Set selected team member for editing
     setShowForm(true)
   }
 
@@ -243,19 +280,32 @@ const AppointmentsSection = () => {
       const client = clients.find(c => c.id === parseInt(formData.client_id))
       const teamMember = teamMembers.find(t => t.id === parseInt(formData.team_member_id))
       
+      // Calculate total price and services list based on selected services
+      const selectedServices = formData.services || []
+      let totalPrice = 0
+      const serviceNames = []
+      
+      selectedServices.forEach(serviceId => {
+        const service = services.find(s => s.id === parseInt(serviceId))
+        if (service) {
+          totalPrice += service.price
+          serviceNames.push(service.name)
+        }
+      })
+      
       const appointmentData = {
         ...formData,
         client_name: client?.name || '',
         team_member_name: teamMember?.name || '',
-        total_price: 0, // This would be calculated based on selected services
-        services_list: 'Services to be selected' // This would be based on selected services
+        total_price: totalPrice,
+        services_list: serviceNames.length > 0 ? serviceNames.join(', ') : 'Nenhum serviço selecionado'
       }
       
       if (editingAppointment) {
         // Update existing appointment
         const updatedAppointment = { ...editingAppointment, ...appointmentData }
         setAppointments(prev => prev.map(a => a.id === editingAppointment.id ? updatedAppointment : a))
-        alert('Appointment updated successfully!')
+        alert('Agendamento atualizado com sucesso!')
       } else {
         // Create new appointment
         const newAppointment = { 
@@ -264,14 +314,15 @@ const AppointmentsSection = () => {
           created_at: new Date().toISOString() 
         }
         setAppointments(prev => [...prev, newAppointment])
-        alert('Appointment created successfully!')
+        alert('Agendamento criado com sucesso!')
       }
       
       setShowForm(false)
       setEditingAppointment(null)
+      setSelectedTeamMember(null) // Reset selected team member
     } catch (error) {
       console.error('Error saving appointment:', error)
-      alert('Error saving appointment. Please try again.')
+      alert('Erro ao salvar agendamento. Tente novamente.')
     } finally {
       setIsSubmitting(false)
     }
@@ -280,6 +331,7 @@ const AppointmentsSection = () => {
   const handleCancel = () => {
     setShowForm(false)
     setEditingAppointment(null)
+    setSelectedTeamMember(null) // Reset selected team member
   }
 
   return (

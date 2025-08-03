@@ -52,10 +52,20 @@ const MuiCrudForm = ({
   const [errors, setErrors] = useState({})
 
   useEffect(() => {
-    // Initialize form data
+    // Only initialize form data when data prop changes (editing vs creating)
+    // Don't reinitialize when fields change (e.g., when options update)
     const initialData = {}
     fields.forEach(field => {
-      let value = data?.[field.name] || field.defaultValue || ''
+      let value = data?.[field.name] || field.defaultValue
+      
+      // Set default values based on field type
+      if (value === undefined || value === null) {
+        if (field.type === 'multiselect') {
+          value = []
+        } else {
+          value = ''
+        }
+      }
       
       // Format phone numbers for display if editing existing data
       if (field.type === 'tel' && value && field.format) {
@@ -65,7 +75,36 @@ const MuiCrudForm = ({
       initialData[field.name] = value
     })
     setFormData(initialData)
-  }, [fields, data])
+  }, [data]) // Only depend on data, not fields
+
+  // Handle new fields being added without clearing existing form data
+  useEffect(() => {
+    setFormData(prevFormData => {
+      const newFormData = { ...prevFormData }
+      let hasChanges = false
+      
+      fields.forEach(field => {
+        // Only add field if it doesn't exist in current form data
+        if (!(field.name in newFormData)) {
+          let value = field.defaultValue
+          
+          // Set default values based on field type
+          if (value === undefined || value === null) {
+            if (field.type === 'multiselect') {
+              value = []
+            } else {
+              value = ''
+            }
+          }
+          
+          newFormData[field.name] = value
+          hasChanges = true
+        }
+      })
+      
+      return hasChanges ? newFormData : prevFormData
+    })
+  }, [fields])
 
   const handleChange = (fieldName, value, field = null) => {
     let processedValue = value
@@ -100,6 +139,11 @@ const MuiCrudForm = ({
         ...prev,
         [fieldName]: null
       }))
+    }
+    
+    // Call field-specific onChange handler if provided
+    if (field && field.onChange) {
+      field.onChange(processedValue)
     }
   }
 
@@ -224,11 +268,70 @@ const MuiCrudForm = ({
             <InputLabel required={field.required}>{field.label}</InputLabel>
             <Select
               value={formData[field.name] || ''}
-              onChange={(e) => handleChange(field.name, e.target.value)}
+              onChange={(e) => handleChange(field.name, e.target.value, field)}
               label={field.label}
             >
               {field.options.map(option => (
                 <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </Select>
+            {(errors[field.name] || field.helpText) && (
+              <FormHelperText error={!!errors[field.name]}>
+                {errors[field.name] || field.helpText}
+              </FormHelperText>
+            )}
+          </FormControl>
+        )
+      
+      case 'multiselect':
+        return (
+          <FormControl 
+            key={field.name} 
+            {...commonProps}
+            sx={{
+              ...commonProps.sx,
+              minWidth: '250px'
+            }}
+          >
+            <InputLabel required={field.required}>{field.label}</InputLabel>
+            <Select
+              multiple
+              value={formData[field.name] || []}
+              onChange={(e) => handleChange(field.name, e.target.value, field)}
+              label={field.label}
+              renderValue={(selected) => (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  {selected.map((value) => {
+                    const option = field.options.find(opt => opt.value === value)
+                    return (
+                      <Chip 
+                        key={value} 
+                        label={option?.label || value} 
+                        size="small"
+                        sx={{
+                          bgcolor: 'primary.main',
+                          color: 'white',
+                          '& .MuiChip-deleteIcon': {
+                            color: 'rgba(255, 255, 255, 0.7)',
+                            '&:hover': {
+                              color: 'white'
+                            }
+                          }
+                        }}
+                      />
+                    )
+                  })}
+                </Box>
+              )}
+            >
+              {field.options.map(option => (
+                <MenuItem key={option.value} value={option.value}>
+                  <Checkbox 
+                    checked={(formData[field.name] || []).indexOf(option.value) > -1}
+                    sx={{ mr: 1 }}
+                  />
                   {option.label}
                 </MenuItem>
               ))}

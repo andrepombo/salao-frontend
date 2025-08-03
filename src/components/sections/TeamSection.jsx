@@ -12,31 +12,31 @@ const TeamSection = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const columns = [
-    { key: 'name', label: 'Name' },
-    { key: 'phone', label: 'Phone' },
+    { key: 'name', label: 'Nome' },
+    { key: 'phone', label: 'Telefone' },
     { key: 'email', label: 'Email' },
-    { key: 'hire_date', label: 'Hire Date', type: 'date' },
+    { key: 'hire_date', label: 'Data de Contratação', type: 'date' },
     { key: 'is_active', label: 'Status', type: 'boolean' },
-    { key: 'specialties_count', label: 'Specialties' }
+    { key: 'specialties_count', label: 'Especialidades' }
   ]
 
   const formFields = [
     {
       name: 'name',
-      label: 'Full Name',
+      label: 'Nome Completo',
       type: 'text',
       required: true,
-      placeholder: 'Enter team member name'
+      placeholder: 'Digite o nome do profissional'
     },
     {
       name: 'phone',
-      label: 'Phone Number',
+      label: 'Telefone',
       type: 'tel',
       required: true,
       placeholder: '11987654321',
       validation: (value) => {
         const phoneRegex = /^\d{11}$/
-        return phoneRegex.test(value) || 'Please enter exactly 11 digits'
+        return phoneRegex.test(value) || 'Por favor, digite exatamente 11 dígitos'
       },
       format: (value) => {
         // Remove all non-digits
@@ -58,28 +58,37 @@ const TeamSection = () => {
       name: 'email',
       label: 'Email',
       type: 'email',
-      placeholder: 'member@salon.com'
+      placeholder: 'profissional@salao.com'
     },
     {
       name: 'address',
-      label: 'Address',
+      label: 'Endereço',
       type: 'textarea',
       fullWidth: true,
-      placeholder: 'Enter team member address'
+      placeholder: 'Digite o endereço do profissional'
     },
     {
       name: 'hire_date',
-      label: 'Hire Date',
+      label: 'Data de Contratação',
       type: 'date',
       required: true,
-      helpText: 'Date when the team member was hired'
+      helpText: 'Data em que o profissional foi contratado'
     },
     {
       name: 'is_active',
-      label: 'Active Status',
+      label: 'Status Ativo',
       type: 'checkbox',
       defaultValue: true,
-      helpText: 'Whether this team member is currently active'
+      helpText: 'Se este profissional está atualmente ativo'
+    },
+    {
+      name: 'specialties',
+      label: 'Especialidades',
+      type: 'multiselect',
+      required: false,
+      options: services.map(service => ({ value: service.id, label: service.name })),
+      placeholder: 'Selecione as especialidades do profissional',
+      helpText: 'Serviços que este profissional pode realizar'
     }
   ]
 
@@ -100,7 +109,7 @@ const TeamSection = () => {
           email: 'ana@salon.com',
           hire_date: '2023-03-15',
           is_active: true,
-          specialties_count: 3,
+          specialties: [1, 2, 3], // Corte Feminino, Corte Masculino, Coloração
           address: 'Rua Augusta, 789',
           created_at: '2023-03-15T09:00:00Z'
         },
@@ -111,12 +120,19 @@ const TeamSection = () => {
           email: 'carlos@salon.com',
           hire_date: '2023-06-01',
           is_active: true,
-          specialties_count: 2,
+          specialties: [4, 5], // Manicure, Pedicure
           address: 'Av. Faria Lima, 321',
           created_at: '2023-06-01T10:30:00Z'
         }
       ]
-      setTeamMembers(mockTeamMembers)
+      
+      // Add dynamic specialties_count to each team member
+      const processedTeamMembers = mockTeamMembers.map(member => ({
+        ...member,
+        specialties_count: member.specialties ? member.specialties.length : 0
+      }))
+      
+      setTeamMembers(processedTeamMembers)
     } catch (error) {
       console.error('Error loading team members:', error)
       setTeamMembers([])
@@ -153,14 +169,14 @@ const TeamSection = () => {
   }
 
   const handleDelete = async (member) => {
-    if (window.confirm(`Are you sure you want to delete ${member.name}?`)) {
+    if (window.confirm(`Tem certeza que deseja excluir ${member.name}?`)) {
       try {
         // await apiService.delete(`/api/team/${member.id}/`)
         setTeamMembers(prev => prev.filter(m => m.id !== member.id))
-        alert('Team member deleted successfully!')
+        alert('Profissional excluído com sucesso!')
       } catch (error) {
         console.error('Error deleting team member:', error)
-        alert('Error deleting team member. Please try again.')
+        alert('Erro ao excluir profissional. Tente novamente.')
       }
     }
   }
@@ -171,19 +187,23 @@ const TeamSection = () => {
       
       if (editingMember) {
         // Update existing team member
-        const updatedMember = { ...editingMember, ...formData }
+        const updatedMember = { 
+          ...editingMember, 
+          ...formData,
+          specialties_count: formData.specialties ? formData.specialties.length : 0
+        }
         setTeamMembers(prev => prev.map(m => m.id === editingMember.id ? updatedMember : m))
-        alert('Team member updated successfully!')
+        alert('Profissional atualizado com sucesso!')
       } else {
         // Create new team member
         const newMember = { 
           id: Date.now(), 
           ...formData, 
-          specialties_count: 0,
+          specialties_count: formData.specialties ? formData.specialties.length : 0,
           created_at: new Date().toISOString() 
         }
         setTeamMembers(prev => [...prev, newMember])
-        alert('Team member created successfully!')
+        alert('Profissional criado com sucesso!')
       }
       
       setShowForm(false)
@@ -204,19 +224,19 @@ const TeamSection = () => {
   return (
     <div>
       <DataTable
-        title="Team Members"
+        title="Equipe"
         columns={columns}
         data={teamMembers}
         onAdd={handleAdd}
         onEdit={handleEdit}
         onDelete={handleDelete}
         isLoading={isLoading}
-        emptyMessage="No team members registered yet. Add your first team member to get started!"
+        emptyMessage="Nenhum profissional cadastrado ainda. Adicione seu primeiro profissional para começar!"
       />
 
       {showForm && (
         <MuiCrudForm
-          title="Team Member"
+          title="Profissional"
           fields={formFields}
           data={editingMember}
           onSubmit={handleSubmit}
