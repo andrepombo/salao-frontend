@@ -391,6 +391,8 @@ const AppointmentsSection = () => {
           const updatedWithNames = {
             // Start with the backend response (this has the most up-to-date data)
             ...updatedAppointment,
+            // ENSURE ID is preserved from the editing appointment
+            id: editingAppointment.id,
             // Add frontend-specific fields for display
             client_id: appointmentDataWithNames.client_id,
             team_member_id: appointmentDataWithNames.team_member_id,
@@ -402,10 +404,17 @@ const AppointmentsSection = () => {
           }
           
           console.log('🔄 Final updated appointment for state:', updatedWithNames)
+          console.log('🔄 Preserved ID:', updatedWithNames.id)
           
           // Update the appointments state
           setAppointments(prev => {
-            const updated = prev.map(a => a.id === editingAppointment.id ? updatedWithNames : a)
+            const updated = prev.map(a => {
+              if (a.id === editingAppointment.id) {
+                console.log('🔄 Updating appointment with ID:', a.id, 'to:', updatedWithNames)
+                return updatedWithNames
+              }
+              return a
+            })
             console.log('🔄 Updated appointments state:', updated)
             return updated
           })
