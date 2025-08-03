@@ -14,10 +14,10 @@ const AppointmentsSection = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const columns = [
-    { key: 'client_name', label: 'Client' },
-    { key: 'team_member_name', label: 'Team Member' },
-    { key: 'appointment_date', label: 'Date', type: 'date' },
-    { key: 'appointment_time', label: 'Time', type: 'time' },
+    { key: 'client_name', label: 'Cliente' },
+    { key: 'team_member_name', label: 'Profissional' },
+    { key: 'appointment_date', label: 'Data', type: 'date' },
+    { key: 'appointment_time', label: 'Horário', type: 'time' },
     { key: 'status', label: 'Status', type: 'badge', badgeColor: (value) => {
       const colors = {
         'scheduled': 'info',
@@ -30,37 +30,37 @@ const AppointmentsSection = () => {
       return colors[value] || 'default'
     }},
     { key: 'total_price', label: 'Total', type: 'currency' },
-    { key: 'services_list', label: 'Services' }
+    { key: 'services_list', label: 'Serviços' }
   ]
 
   const formFields = [
     {
       name: 'client_id',
-      label: 'Client',
+      label: 'Cliente',
       type: 'select',
       required: true,
       options: clients.map(client => ({ value: client.id, label: client.name }))
     },
     {
       name: 'team_member_id',
-      label: 'Team Member',
+      label: 'Profissional',
       type: 'select',
       required: true,
       options: teamMembers.map(member => ({ value: member.id, label: member.name }))
     },
     {
       name: 'appointment_date',
-      label: 'Date',
+      label: 'Data',
       type: 'date',
       required: true,
-      helpText: 'Select appointment date'
+      helpText: 'Selecione a data do agendamento'
     },
     {
       name: 'appointment_time',
-      label: 'Time',
+      label: 'Horário',
       type: 'time',
       required: true,
-      helpText: 'Select appointment time'
+      helpText: 'Selecione o horário do agendamento'
     },
     {
       name: 'status',
@@ -69,20 +69,20 @@ const AppointmentsSection = () => {
       required: true,
       defaultValue: 'scheduled',
       options: [
-        { value: 'scheduled', label: 'Scheduled' },
-        { value: 'confirmed', label: 'Confirmed' },
-        { value: 'in_progress', label: 'In Progress' },
-        { value: 'completed', label: 'Completed' },
-        { value: 'cancelled', label: 'Cancelled' },
-        { value: 'no_show', label: 'No Show' }
+        { value: 'scheduled', label: 'Agendado' },
+        { value: 'confirmed', label: 'Confirmado' },
+        { value: 'in_progress', label: 'Em Andamento' },
+        { value: 'completed', label: 'Concluído' },
+        { value: 'cancelled', label: 'Cancelado' },
+        { value: 'no_show', label: 'Não Compareceu' }
       ]
     },
     {
       name: 'notes',
-      label: 'Notes',
+      label: 'Observações',
       type: 'textarea',
       fullWidth: true,
-      placeholder: 'Additional notes for the appointment'
+      placeholder: 'Observações adicionais para o agendamento'
     }
   ]
 
@@ -265,19 +265,19 @@ const AppointmentsSection = () => {
   return (
     <div>
       <DataTable
-        title="Appointments"
+        title="Agendamentos"
         columns={columns}
         data={appointments}
         onAdd={handleAdd}
         onEdit={handleEdit}
         onDelete={handleDelete}
         isLoading={isLoading}
-        emptyMessage="No appointments scheduled yet. Create your first appointment to get started!"
+        emptyMessage="Nenhum agendamento encontrado. Crie seu primeiro agendamento para começar!"
       />
 
       {showForm && (
         <MuiCrudForm
-          title="Appointment"
+          title="Agendamento"
           fields={formFields}
           data={editingAppointment}
           onSubmit={handleSubmit}
