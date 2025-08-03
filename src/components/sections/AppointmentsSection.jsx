@@ -166,20 +166,36 @@ const AppointmentsSection = () => {
       // Try to fetch real data from backend first
       try {
         const response = await apiService.get('/api/appointments/')
-        console.log('AppointmentsSection - API Response:', response)
+        console.log('🔍 AppointmentsSection - Raw API Response:', response)
+        console.log('🔍 Response type:', typeof response)
+        console.log('🔍 Response keys:', Object.keys(response || {}))
         
         // Handle both paginated and direct array responses safely
         let appointmentsData = []
         
         if (Array.isArray(response)) {
+          console.log('📋 Response is direct array')
           appointmentsData = response
         } else if (response && Array.isArray(response.results)) {
+          console.log('📋 Response is paginated with results array')
           appointmentsData = response.results
+          console.log('📋 Results array:', response.results)
         } else if (response && response.data && Array.isArray(response.data)) {
+          console.log('📋 Response has data.results structure')
           appointmentsData = response.data
+        } else {
+          console.warn('⚠️ Unexpected response structure:', response)
         }
         
-        console.log('AppointmentsSection - Using real data:', appointmentsData.length, 'appointments')
+        console.log('✅ Final appointments data:', appointmentsData)
+        console.log('✅ Appointments count:', appointmentsData.length)
+        
+        // Debug each appointment object
+        appointmentsData.forEach((appointment, index) => {
+          console.log(`📋 Appointment ${index + 1}:`, appointment)
+          console.log(`📋 Appointment ${index + 1} ID:`, appointment.id)
+        })
+        
         setAppointments(appointmentsData)
       } catch (apiError) {
         console.error('AppointmentsSection - Failed to load appointments from backend:', apiError)
@@ -248,18 +264,33 @@ const AppointmentsSection = () => {
 
   const handleEdit = async (appointment) => {
     try {
+      // Debug: Check appointment object structure
+      console.log('Appointment object for editing:', appointment)
+      console.log('Appointment ID:', appointment.id)
+      
+      // Check if appointment has a valid ID
+      if (!appointment.id || appointment.id === 'undefined') {
+        console.error('Invalid appointment ID:', appointment.id)
+        alert('Erro: ID do agendamento inválido. Não é possível editar este agendamento.')
+        return
+      }
+      
       // Fetch detailed appointment data from backend for editing
       const detailedAppointment = await apiService.get(`/api/appointments/${appointment.id}/`)
       console.log('Detailed appointment data:', detailedAppointment)
       
       // Transform the detailed data to match form field expectations
+      const serviceIds = detailedAppointment.services?.map(service => service.id) || []
+      console.log('Services from backend:', detailedAppointment.services)
+      console.log('Extracted service IDs:', serviceIds)
+      
       const transformedAppointment = {
         ...detailedAppointment,
         // Extract IDs from the nested objects
         client_id: detailedAppointment.client?.id,
         team_member_id: detailedAppointment.team_member?.id,
         // Extract service IDs from the services array
-        services: detailedAppointment.services?.map(service => service.id) || [],
+        services: serviceIds,
         // Keep other fields as they are
         appointment_date: detailedAppointment.appointment_date,
         appointment_time: detailedAppointment.appointment_time,
@@ -307,16 +338,23 @@ const AppointmentsSection = () => {
       
       // Calculate total price and services list based on selected services
       const selectedServices = formData.services || []
+      console.log('Selected services for calculation:', selectedServices)
       let totalPrice = 0
       const serviceNames = []
       
       selectedServices.forEach(serviceId => {
         const service = services.find(s => s.id === parseInt(serviceId))
+        console.log(`Service ID ${serviceId}:`, service)
         if (service) {
-          totalPrice += parseFloat(service.price || 0)
+          const servicePrice = parseFloat(service.price || 0)
+          console.log(`Adding price: ${servicePrice} (from ${service.price})`)
+          totalPrice += servicePrice
           serviceNames.push(service.name)
         }
       })
+      
+      console.log('Final calculated total price:', totalPrice)
+      console.log('Service names:', serviceNames)
       
       // Prepare data for backend API (Django expects specific field names)
       const appointmentData = {
@@ -351,7 +389,9 @@ const AppointmentsSection = () => {
             team_member_id: appointmentDataWithNames.team_member_id,
             client_name: appointmentDataWithNames.client_name,
             team_member_name: appointmentDataWithNames.team_member_name,
-            services_list: appointmentDataWithNames.services_list
+            services_list: appointmentDataWithNames.services_list,
+            // Use backend calculated total_price if available, otherwise use local calculation
+            total_price: updatedAppointment.total_price || appointmentDataWithNames.total_price
           }
           setAppointments(prev => prev.map(a => a.id === editingAppointment.id ? updatedWithNames : a))
           alert('Agendamento atualizado com sucesso!')
