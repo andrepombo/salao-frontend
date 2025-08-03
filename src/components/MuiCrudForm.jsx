@@ -204,7 +204,23 @@ const MuiCrudForm = ({
       
       case 'select':
         return (
-          <FormControl key={field.name} {...commonProps}>
+          <FormControl 
+            key={field.name} 
+            {...commonProps}
+            sx={{
+              ...commonProps.sx,
+              // Ensure gender and service_type fields have enough width for full labels
+              ...((field.name === 'gender' || field.name === 'service_type') && {
+                minWidth: '200px',
+                '& .MuiInputLabel-root': {
+                  whiteSpace: 'nowrap'
+                },
+                '& .MuiSelect-select': {
+                  minWidth: '150px'
+                }
+              })
+            }}
+          >
             <InputLabel required={field.required}>{field.label}</InputLabel>
             <Select
               value={formData[field.name] || ''}

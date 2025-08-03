@@ -41,6 +41,7 @@ const ServicesSection = () => {
       label: 'Tipo de Serviço',
       type: 'select',
       required: true,
+      fullWidth: true,
       options: [
         { value: 'cabelo', label: 'Cabelo' },
         { value: 'unhas', label: 'Unhas' },

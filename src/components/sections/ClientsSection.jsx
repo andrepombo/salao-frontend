@@ -76,6 +76,7 @@ const ClientsSection = () => {
       name: 'gender',
       label: 'Gênero',
       type: 'select',
+      fullWidth: true,
       options: [
         { value: 'M', label: 'Masculino' },
         { value: 'F', label: 'Feminino' },
