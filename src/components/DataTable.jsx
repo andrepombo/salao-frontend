@@ -64,9 +64,10 @@ const DataTable = ({
       case 'boolean':
         return value ? '✅' : '❌'
       case 'badge':
-        return <span className={`badge badge-${column.badgeColor?.(value) || 'default'}`}>{value}</span>
+        const displayValue = column.render ? column.render(value) : value
+        return <span className={`badge badge-${column.badgeColor?.(value) || 'default'}`}>{displayValue}</span>
       default:
-        return value.toString()
+        return column.render ? column.render(value) : value.toString()
     }
   }
 

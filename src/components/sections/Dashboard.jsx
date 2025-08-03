@@ -56,6 +56,30 @@ const Dashboard = () => {
           service: 'Coloração',
           time: '16:00',
           status: 'in_progress'
+        },
+        {
+          id: 4,
+          client_name: 'Pedro Costa',
+          team_member_name: 'Carlos Mendes',
+          service: 'Manicure',
+          time: '11:30',
+          status: 'scheduled'
+        },
+        {
+          id: 5,
+          client_name: 'Lucia Ferreira',
+          team_member_name: 'Ana Costa',
+          service: 'Corte + Escova',
+          time: '09:00',
+          status: 'completed'
+        },
+        {
+          id: 6,
+          client_name: 'Roberto Lima',
+          team_member_name: 'Carlos Mendes',
+          service: 'Corte Masculino',
+          time: '15:30',
+          status: 'confirmed'
         }
       ]
       
@@ -80,6 +104,39 @@ const Dashboard = () => {
     return colors[status] || '#6b7280'
   }
 
+  const getStatusLabel = (status) => {
+    const labels = {
+      'scheduled': 'Agendado',
+      'confirmed': 'Confirmado',
+      'in_progress': 'Em Andamento',
+      'completed': 'Concluído',
+      'cancelled': 'Cancelado',
+      'no_show': 'Não Compareceu'
+    }
+    return labels[status] || status
+  }
+
+  const groupAppointmentsByStatus = (appointments) => {
+    const grouped = appointments.reduce((acc, appointment) => {
+      const status = appointment.status
+      if (!acc[status]) {
+        acc[status] = []
+      }
+      acc[status].push(appointment)
+      return acc
+    }, {})
+    
+    // Sort by workflow order: scheduled, confirmed, in_progress, completed
+    const statusOrder = ['scheduled', 'confirmed', 'in_progress', 'completed']
+    const sortedGrouped = {}
+    statusOrder.forEach(status => {
+      if (grouped[status]) {
+        sortedGrouped[status] = grouped[status]
+      }
+    })
+    return sortedGrouped
+  }
+
   if (isLoading) {
     return (
       <div className="dashboard-loading">
@@ -97,19 +154,21 @@ const Dashboard = () => {
       </div>
 
       <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon">👥</div>
+        <div className="stat-card revenue-stat">
+          <div className="stat-icon">💰</div>
           <div className="stat-content">
-            <h3>{stats.totalClients}</h3>
-            <p>Total de Clientes</p>
+            <h3>R$ {stats.weeklyRevenue.toFixed(2)}</h3>
+            <p>Receita Semanal</p>
+            <span className="revenue-trend">+12% da semana passada</span>
           </div>
         </div>
         
-        <div className="stat-card">
-          <div className="stat-icon">💼</div>
+        <div className="stat-card revenue-stat">
+          <div className="stat-icon">💵</div>
           <div className="stat-content">
-            <h3>{stats.totalTeamMembers}</h3>
-            <p>Membros da Equipe</p>
+            <h3>R$ {stats.monthlyRevenue.toFixed(2)}</h3>
+            <p>Receita Mensal</p>
+            <span className="revenue-trend">+8% do mês passado</span>
           </div>
         </div>
         
@@ -131,62 +190,33 @@ const Dashboard = () => {
       </div>
 
       <div className="dashboard-content">
-        <div className="revenue-cards">
-          <div className="revenue-card">
-            <h3>Receita Semanal</h3>
-            <div className="revenue-amount">R$ {stats.weeklyRevenue.toFixed(2)}</div>
-            <div className="revenue-trend">+12% da semana passada</div>
-          </div>
-          
-          <div className="revenue-card">
-            <h3>Receita Mensal</h3>
-            <div className="revenue-amount">R$ {stats.monthlyRevenue.toFixed(2)}</div>
-            <div className="revenue-trend">+8% do mês passado</div>
-          </div>
-        </div>
-
-        <div className="recent-appointments">
+        <div className="appointments-by-status">
           <h3>Agendamentos de Hoje</h3>
-          <div className="appointments-list">
-            {recentAppointments.map(appointment => (
-              <div key={appointment.id} className="appointment-item">
-                <div className="appointment-time">{appointment.time}</div>
-                <div className="appointment-details">
-                  <div className="appointment-client">{appointment.client_name}</div>
-                  <div className="appointment-service">{appointment.service}</div>
-                  <div className="appointment-staff">com {appointment.team_member_name}</div>
+          <div className="status-columns">
+            {Object.entries(groupAppointmentsByStatus(recentAppointments)).map(([status, appointments]) => (
+              <div key={status} className="status-group">
+                <div className="status-header">
+                  <div 
+                    className="status-indicator"
+                    style={{ backgroundColor: getStatusColor(status) }}
+                  ></div>
+                  <h4>{getStatusLabel(status)} ({appointments.length})</h4>
                 </div>
-                <div 
-                  className="appointment-status"
-                  style={{ backgroundColor: getStatusColor(appointment.status) }}
-                >
-                  {appointment.status}
+                <div className="appointments-list">
+                  {appointments.map(appointment => (
+                    <div key={appointment.id} className="appointment-item">
+                      <div className="appointment-time">{appointment.time}</div>
+                      <div className="appointment-details">
+                        <div className="appointment-client">{appointment.client_name}</div>
+                        <div className="appointment-service">{appointment.service}</div>
+                        <div className="appointment-staff">com {appointment.team_member_name}</div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      </div>
-
-      <div className="quick-actions">
-        <h3>Ações Rápidas</h3>
-        <div className="action-buttons">
-          <button className="action-btn">
-            <span>📅</span>
-            Novo Agendamento
-          </button>
-          <button className="action-btn">
-            <span>👤</span>
-            Adicionar Cliente
-          </button>
-          <button className="action-btn">
-            <span>✂️</span>
-            Novo Serviço
-          </button>
-          <button className="action-btn">
-            <span>💼</span>
-            Adicionar Membro
-          </button>
         </div>
       </div>
     </div>
