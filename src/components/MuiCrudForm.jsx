@@ -209,14 +209,14 @@ const MuiCrudForm = ({
             {...commonProps}
             sx={{
               ...commonProps.sx,
-              // Ensure gender and service_type fields have enough width for full labels
-              ...((field.name === 'gender' || field.name === 'service_type') && {
-                minWidth: '200px',
+              // Ensure gender, service_type, client_id, and team_member_id fields have enough width for full labels
+              ...((field.name === 'gender' || field.name === 'service_type' || field.name === 'client_id' || field.name === 'team_member_id') && {
+                minWidth: '250px',
                 '& .MuiInputLabel-root': {
                   whiteSpace: 'nowrap'
                 },
                 '& .MuiSelect-select': {
-                  minWidth: '150px'
+                  minWidth: '200px'
                 }
               })
             }}
@@ -404,21 +404,7 @@ const MuiCrudForm = ({
           px: 4,
           background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)'
         }}>
-          <Box sx={{ mb: 3 }}>
-            <Chip 
-              label={isEdit ? 'Modo de Edição' : 'Criação de Registro'}
-              color={isEdit ? 'secondary' : 'primary'}
-              variant="outlined"
-              size="small"
-              sx={{ 
-                fontWeight: 500,
-                borderRadius: 2,
-                '& .MuiChip-label': {
-                  px: 2
-                }
-              }}
-            />
-          </Box>
+
           
           <Grid container spacing={3}>
             {fields.map(field => (

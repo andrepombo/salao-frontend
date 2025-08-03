@@ -39,6 +39,15 @@ const AppointmentsSection = () => {
       label: 'Cliente',
       type: 'select',
       required: true,
+      fullWidth: true,
+      minWidth: 350,
+      menuProps: {
+        PaperProps: {
+          style: {
+            maxHeight: 200
+          }
+        }
+      },
       options: clients.map(client => ({ value: client.id, label: client.name }))
     },
     {
@@ -46,6 +55,15 @@ const AppointmentsSection = () => {
       label: 'Profissional',
       type: 'select',
       required: true,
+      fullWidth: true,
+      minWidth: 350,
+      menuProps: {
+        PaperProps: {
+          style: {
+            maxHeight: 200
+          }
+        }
+      },
       options: teamMembers.map(member => ({ value: member.id, label: member.name }))
     },
     {
@@ -53,6 +71,7 @@ const AppointmentsSection = () => {
       label: 'Data',
       type: 'date',
       required: true,
+      fullWidth: true,
       helpText: 'Selecione a data do agendamento'
     },
     {
@@ -60,6 +79,7 @@ const AppointmentsSection = () => {
       label: 'Horário',
       type: 'time',
       required: true,
+      fullWidth: true,
       helpText: 'Selecione o horário do agendamento'
     },
     {
