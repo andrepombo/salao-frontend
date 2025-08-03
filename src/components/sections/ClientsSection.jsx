@@ -32,10 +32,25 @@ const ClientsSection = () => {
       label: 'Número de Telefone',
       type: 'tel',
       required: true,
-      placeholder: '+5511999887766',
+      placeholder: '11987654321',
       validation: (value) => {
-        const phoneRegex = /^\+?1?\d{9,15}$/
-        return phoneRegex.test(value) || 'Por favor, digite um número de telefone válido'
+        const phoneRegex = /^\d{11}$/
+        return phoneRegex.test(value) || 'Por favor, digite exatamente 11 dígitos'
+      },
+      format: (value) => {
+        // Remove all non-digits
+        const digits = value.replace(/\D/g, '')
+        // Limit to 11 digits
+        const limited = digits.substring(0, 11)
+        // Format as (xx) xxxxx-xxxx if we have enough digits
+        if (limited.length >= 11) {
+          return `(${limited.substring(0, 2)}) ${limited.substring(2, 7)}-${limited.substring(7, 11)}`
+        } else if (limited.length >= 7) {
+          return `(${limited.substring(0, 2)}) ${limited.substring(2, 7)}-${limited.substring(7)}`
+        } else if (limited.length >= 2) {
+          return `(${limited.substring(0, 2)}) ${limited.substring(2)}`
+        }
+        return limited
       }
     },
     {
@@ -81,7 +96,7 @@ const ClientsSection = () => {
         {
           id: 1,
           name: 'Maria Silva',
-          phone: '+5511999887766',
+          phone: '11999887766',
           email: 'maria@email.com',
           gender: 'F',
           birthday: '1990-05-15',
@@ -91,7 +106,7 @@ const ClientsSection = () => {
         {
           id: 2,
           name: 'João Santos',
-          phone: '+5511888776655',
+          phone: '11888776655',
           email: 'joao@email.com',
           gender: 'M',
           birthday: '1985-12-03',

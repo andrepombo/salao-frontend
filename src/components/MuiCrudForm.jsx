@@ -55,15 +55,43 @@ const MuiCrudForm = ({
     // Initialize form data
     const initialData = {}
     fields.forEach(field => {
-      initialData[field.name] = data?.[field.name] || field.defaultValue || ''
+      let value = data?.[field.name] || field.defaultValue || ''
+      
+      // Format phone numbers for display if editing existing data
+      if (field.type === 'tel' && value && field.format) {
+        value = field.format(value)
+      }
+      
+      initialData[field.name] = value
     })
     setFormData(initialData)
   }, [fields, data])
 
-  const handleChange = (fieldName, value) => {
+  const handleChange = (fieldName, value, field = null) => {
+    let processedValue = value
+    
+    // Special handling for tel fields to improve UX
+    if (field && field.type === 'tel' && field.format) {
+      // Only apply formatting if the value is getting longer or if it's a complete reformat
+      const currentValue = formData[fieldName] || ''
+      const currentDigits = currentValue.replace(/\D/g, '')
+      const newDigits = value.replace(/\D/g, '')
+      
+      // If user is deleting (fewer digits), don't reformat immediately
+      if (newDigits.length < currentDigits.length) {
+        // Just clean the input but don't format until they start typing again
+        processedValue = newDigits
+      } else {
+        // User is typing/adding, apply formatting
+        processedValue = field.format(value)
+      }
+    } else if (field && field.format) {
+      processedValue = field.format(value)
+    }
+    
     setFormData(prev => ({
       ...prev,
-      [fieldName]: value
+      [fieldName]: processedValue
     }))
     
     // Clear error when user starts typing
@@ -84,7 +112,13 @@ const MuiCrudForm = ({
       }
       
       if (field.validation && formData[field.name]) {
-        const validationResult = field.validation(formData[field.name])
+        // For tel fields, validate against raw digits only
+        let valueToValidate = formData[field.name]
+        if (field.type === 'tel') {
+          valueToValidate = formData[field.name].replace(/\D/g, '')
+        }
+        
+        const validationResult = field.validation(valueToValidate)
         if (validationResult !== true) {
           newErrors[field.name] = validationResult
         }
@@ -99,7 +133,17 @@ const MuiCrudForm = ({
     e.preventDefault()
     
     if (validateForm()) {
-      onSubmit(formData)
+      // Process form data before submission
+      const processedData = { ...formData }
+      
+      // Convert tel fields to raw digits for backend
+      fields.forEach(field => {
+        if (field.type === 'tel' && processedData[field.name]) {
+          processedData[field.name] = processedData[field.name].replace(/\D/g, '')
+        }
+      })
+      
+      onSubmit(processedData)
     }
   }
 
@@ -116,7 +160,6 @@ const MuiCrudForm = ({
     switch (field.type) {
       case 'text':
       case 'email':
-      case 'tel':
         return (
           <TextField
             key={field.name}
@@ -124,6 +167,20 @@ const MuiCrudForm = ({
             type={field.type}
             value={formData[field.name] || ''}
             onChange={(e) => handleChange(field.name, e.target.value)}
+            placeholder={field.placeholder}
+            required={field.required}
+            {...commonProps}
+          />
+        )
+      
+      case 'tel':
+        return (
+          <TextField
+            key={field.name}
+            label={field.label}
+            type={field.type}
+            value={formData[field.name] || ''}
+            onChange={(e) => handleChange(field.name, e.target.value, field)}
             placeholder={field.placeholder}
             required={field.required}
             {...commonProps}

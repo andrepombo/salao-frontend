@@ -33,10 +33,25 @@ const TeamSection = () => {
       label: 'Phone Number',
       type: 'tel',
       required: true,
-      placeholder: '+1234567890',
+      placeholder: '11987654321',
       validation: (value) => {
-        const phoneRegex = /^\+?1?\d{9,15}$/
-        return phoneRegex.test(value) || 'Please enter a valid phone number'
+        const phoneRegex = /^\d{11}$/
+        return phoneRegex.test(value) || 'Please enter exactly 11 digits'
+      },
+      format: (value) => {
+        // Remove all non-digits
+        const digits = value.replace(/\D/g, '')
+        // Limit to 11 digits
+        const limited = digits.substring(0, 11)
+        // Format as (xx) xxxxx-xxxx if we have enough digits
+        if (limited.length >= 11) {
+          return `(${limited.substring(0, 2)}) ${limited.substring(2, 7)}-${limited.substring(7, 11)}`
+        } else if (limited.length >= 7) {
+          return `(${limited.substring(0, 2)}) ${limited.substring(2, 7)}-${limited.substring(7)}`
+        } else if (limited.length >= 2) {
+          return `(${limited.substring(0, 2)}) ${limited.substring(2)}`
+        }
+        return limited
       }
     },
     {
@@ -81,7 +96,7 @@ const TeamSection = () => {
         {
           id: 1,
           name: 'Ana Costa',
-          phone: '+5511987654321',
+          phone: '11987654321',
           email: 'ana@salon.com',
           hire_date: '2023-03-15',
           is_active: true,
@@ -92,7 +107,7 @@ const TeamSection = () => {
         {
           id: 2,
           name: 'Carlos Mendes',
-          phone: '+5511876543210',
+          phone: '11876543210',
           email: 'carlos@salon.com',
           hire_date: '2023-06-01',
           is_active: true,
