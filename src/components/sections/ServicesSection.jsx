@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import DataTable from '../DataTable'
-import CrudForm from '../CrudForm'
+import MuiCrudForm from '../MuiCrudForm'
 import { apiService } from '../../services/api'
 
 const ServicesSection = () => {
@@ -22,23 +22,23 @@ const ServicesSection = () => {
       }
       return colors[value] || 'default'
     }},
-    { key: 'duration_minutes', label: 'Duration (min)' },
-    { key: 'price', label: 'Price', type: 'currency' },
-    { key: 'is_active', label: 'Active', type: 'boolean' },
-    { key: 'created_at', label: 'Created', type: 'date' }
+    { key: 'duration_minutes', label: 'Duração (min)' },
+    { key: 'price', label: 'Preço', type: 'currency' },
+    { key: 'is_active', label: 'Ativo', type: 'boolean' },
+    { key: 'created_at', label: 'Criado em', type: 'date' }
   ]
 
   const formFields = [
     {
       name: 'name',
-      label: 'Service Name',
+      label: 'Nome do Serviço',
       type: 'text',
       required: true,
-      placeholder: 'Enter service name'
+      placeholder: 'Digite o nome do serviço'
     },
     {
       name: 'service_type',
-      label: 'Service Type',
+      label: 'Tipo de Serviço',
       type: 'select',
       required: true,
       options: [
@@ -51,37 +51,37 @@ const ServicesSection = () => {
     },
     {
       name: 'description',
-      label: 'Description',
+      label: 'Descrição',
       type: 'textarea',
       fullWidth: true,
-      placeholder: 'Describe the service details'
+      placeholder: 'Descreva os detalhes do serviço'
     },
     {
       name: 'duration_minutes',
-      label: 'Duration (minutes)',
+      label: 'Duração (minutos)',
       type: 'number',
       required: true,
       min: 1,
       max: 480,
       placeholder: '60',
-      helpText: 'Service duration in minutes'
+      helpText: 'Duração do serviço em minutos'
     },
     {
       name: 'price',
-      label: 'Price',
+      label: 'Preço',
       type: 'number',
       required: true,
       min: 0,
       step: 0.01,
       placeholder: '50.00',
-      helpText: 'Service price in currency'
+      helpText: 'Preço do serviço em reais'
     },
     {
       name: 'is_active',
-      label: 'Active Service',
+      label: 'Serviço Ativo',
       type: 'checkbox',
       defaultValue: true,
-      helpText: 'Whether this service is currently available'
+      helpText: 'Se este serviço está disponível atualmente'
     }
   ]
 
@@ -226,7 +226,7 @@ const ServicesSection = () => {
       />
 
       {showForm && (
-        <CrudForm
+        <MuiCrudForm
           title="Service"
           fields={formFields}
           data={editingService}

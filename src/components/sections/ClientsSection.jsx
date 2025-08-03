@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import DataTable from '../DataTable'
-import CrudForm from '../CrudForm'
+import MuiCrudForm from '../MuiCrudForm'
 import { apiService } from '../../services/api'
 
 const ClientsSection = () => {
@@ -183,7 +183,7 @@ const ClientsSection = () => {
       />
 
       {showForm && (
-        <CrudForm
+        <MuiCrudForm
           title="Cliente"
           fields={formFields}
           data={editingClient}

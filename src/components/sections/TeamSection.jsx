@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import DataTable from '../DataTable'
-import CrudForm from '../CrudForm'
+import MuiCrudForm from '../MuiCrudForm'
 import { apiService } from '../../services/api'
 
 const TeamSection = () => {
@@ -200,7 +200,7 @@ const TeamSection = () => {
       />
 
       {showForm && (
-        <CrudForm
+        <MuiCrudForm
           title="Team Member"
           fields={formFields}
           data={editingMember}
