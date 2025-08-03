@@ -381,10 +381,17 @@ const AppointmentsSection = () => {
       if (editingAppointment) {
         // Update existing appointment in backend
         try {
+          console.log('🔄 Updating appointment ID:', editingAppointment.id)
+          console.log('🔄 Update data being sent:', appointmentData)
+          
           const updatedAppointment = await apiService.put(`/api/appointments/${editingAppointment.id}/`, appointmentData)
-          // Backend returns the appointment, but we need to add display names for frontend
+          console.log('✅ Backend update response:', updatedAppointment)
+          
+          // Create the complete updated appointment object for frontend state
           const updatedWithNames = {
+            // Start with the backend response (this has the most up-to-date data)
             ...updatedAppointment,
+            // Add frontend-specific fields for display
             client_id: appointmentDataWithNames.client_id,
             team_member_id: appointmentDataWithNames.team_member_id,
             client_name: appointmentDataWithNames.client_name,
@@ -393,7 +400,16 @@ const AppointmentsSection = () => {
             // Use backend calculated total_price if available, otherwise use local calculation
             total_price: updatedAppointment.total_price || appointmentDataWithNames.total_price
           }
-          setAppointments(prev => prev.map(a => a.id === editingAppointment.id ? updatedWithNames : a))
+          
+          console.log('🔄 Final updated appointment for state:', updatedWithNames)
+          
+          // Update the appointments state
+          setAppointments(prev => {
+            const updated = prev.map(a => a.id === editingAppointment.id ? updatedWithNames : a)
+            console.log('🔄 Updated appointments state:', updated)
+            return updated
+          })
+          
           alert('Agendamento atualizado com sucesso!')
         } catch (apiError) {
           console.warn('Failed to update appointment in backend, updating locally:', apiError)
