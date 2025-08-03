@@ -53,6 +53,8 @@ const DataTable = ({
     if (value === null || value === undefined) return '-'
     
     switch (column.type) {
+      case 'custom':
+        return column.render ? column.render(value) : value.toString()
       case 'date':
         return new Date(value).toLocaleDateString()
       case 'time':
@@ -150,18 +152,26 @@ const DataTable = ({
                   <td className="table-cell actions-cell">
                     <div className="action-buttons">
                       <button
-                        className="btn btn-sm btn-secondary"
+                        className="btn btn-sm btn-warning"
                         onClick={() => onEdit(item)}
-                        title="Edit"
+                        title="Editar"
+                        style={{ 
+                          fontSize: '16px', 
+                          fontWeight: 'bold', 
+                          color: '#333',
+                          backgroundColor: '#ffc107',
+                          borderColor: '#ffc107'
+                        }}
                       >
-                        ✏️
+                        ↻
                       </button>
                       <button
                         className="btn btn-sm btn-danger"
                         onClick={() => onDelete(item)}
-                        title="Delete"
+                        title="Excluir"
+                        style={{ color: 'white', fontSize: '14px' }}
                       >
-                        🗑️
+                        ✖
                       </button>
                     </div>
                   </td>

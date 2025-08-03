@@ -12,7 +12,20 @@ const ClientsSection = () => {
 
   const columns = [
     { key: 'name', label: 'Nome' },
-    { key: 'phone', label: 'Telefone' },
+    { 
+      key: 'phone', 
+      label: 'Telefone',
+      type: 'custom',
+      render: (value) => {
+        // Apply Brazilian phone mask: (xx) xxxxx-xxxx
+        if (!value) return '-'
+        const digits = value.replace(/\D/g, '')
+        if (digits.length === 11) {
+          return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
+        }
+        return value // Return original if not 11 digits
+      }
+    },
     { key: 'email', label: 'Email' },
     { key: 'gender', label: 'Gênero' },
     { key: 'birthday', label: 'Aniversário', type: 'date' },
