@@ -24,18 +24,26 @@ const Dashboard = () => {
       setIsLoading(true)
       
       // Fetch real data from backend
-      const [appointmentsData, clientsData, teamData, servicesData] = await Promise.all([
+      const [appointmentsResponse, clientsResponse, teamResponse, servicesResponse] = await Promise.all([
         apiService.get('/api/appointments/'),
         apiService.get('/api/clients/'),
         apiService.get('/api/team/'),
         apiService.get('/api/services/')
       ])
       
+      // Ensure data is in array format, fallback to empty arrays if not
+      const appointmentsData = Array.isArray(appointmentsResponse) ? appointmentsResponse : []
+      const clientsData = Array.isArray(clientsResponse) ? clientsResponse : []
+      const teamData = Array.isArray(teamResponse) ? teamResponse : []
+      const servicesData = Array.isArray(servicesResponse) ? servicesResponse : []
+      
       console.log('Dashboard fetched real data:', {
         appointments: appointmentsData.length,
         clients: clientsData.length,
         team: teamData.length,
-        services: servicesData.length
+        services: servicesData.length,
+        appointmentsType: typeof appointmentsResponse,
+        appointmentsIsArray: Array.isArray(appointmentsResponse)
       })
       
       // Calculate revenue from completed appointments
@@ -71,6 +79,16 @@ const Dashboard = () => {
       })
     } catch (error) {
       console.error('Error loading dashboard data:', error)
+      // Set fallback data in case of error
+      setStats({
+        totalClients: 0,
+        totalTeamMembers: 0,
+        totalServices: 0,
+        todayAppointments: 0,
+        weeklyRevenue: 0,
+        monthlyRevenue: 0
+      })
+      setRecentAppointments([])
     } finally {
       setIsLoading(false)
     }

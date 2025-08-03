@@ -16,14 +16,14 @@ const AppointmentsSection = () => {
 
   // Function to get available services for a selected team member
   const getAvailableServices = (teamMemberId) => {
-    if (!teamMemberId) return []
+    if (!teamMemberId || !teamMembers || !services) return []
     
-    const teamMember = teamMembers.find(member => member.id === parseInt(teamMemberId))
+    const teamMember = (teamMembers || []).find(member => member.id === parseInt(teamMemberId))
     if (!teamMember || !teamMember.specialties) return []
     
-    return services
+    return (services || [])
       .filter(service => teamMember.specialties.includes(service.id))
-      .map(service => ({ value: service.id, label: `${service.name} - R$ ${service.price.toFixed(2)}` }))
+      .map(service => ({ value: service.id, label: `${service.name} - R$ ${service.price?.toFixed(2) || '0.00'}` }))
   }
 
   // Function to get Portuguese status label from English key
@@ -77,7 +77,7 @@ const AppointmentsSection = () => {
           }
         }
       },
-      options: clients.map(client => ({ value: client.id, label: client.name }))
+      options: (clients || []).map(client => ({ value: client.id, label: client.name }))
     },
     {
       name: 'team_member_id',
@@ -93,7 +93,7 @@ const AppointmentsSection = () => {
           }
         }
       },
-      options: teamMembers.map(member => ({ value: member.id, label: member.name })),
+      options: (teamMembers || []).map(member => ({ value: member.id, label: member.name })),
       onChange: (value) => {
         setSelectedTeamMember(value)
       }
@@ -192,11 +192,10 @@ const AppointmentsSection = () => {
 
   const loadClients = async () => {
     try {
-      const mockClients = [
-        { id: 1, name: 'Maria Silva' },
-        { id: 2, name: 'João Santos' }
-      ]
-      setClients(mockClients)
+      const clientsResponse = await apiService.get('/api/clients/')
+      console.log('Loaded clients from backend:', clientsResponse)
+      const clientsData = Array.isArray(clientsResponse) ? clientsResponse : []
+      setClients(clientsData)
     } catch (error) {
       console.error('Error loading clients:', error)
       setClients([])
@@ -205,19 +204,10 @@ const AppointmentsSection = () => {
 
   const loadTeamMembers = async () => {
     try {
-      const mockTeamMembers = [
-        { 
-          id: 1, 
-          name: 'Ana Costa',
-          specialties: [1, 2, 3] // Corte Feminino, Corte Masculino, Coloração
-        },
-        { 
-          id: 2, 
-          name: 'Carlos Mendes',
-          specialties: [4, 5] // Manicure, Barba Completa
-        }
-      ]
-      setTeamMembers(mockTeamMembers)
+      const teamResponse = await apiService.get('/api/team/')
+      console.log('Loaded team members from backend:', teamResponse)
+      const teamData = Array.isArray(teamResponse) ? teamResponse : []
+      setTeamMembers(teamData)
     } catch (error) {
       console.error('Error loading team members:', error)
       setTeamMembers([])
@@ -226,14 +216,10 @@ const AppointmentsSection = () => {
 
   const loadServices = async () => {
     try {
-      const mockServices = [
-        { id: 1, name: 'Corte Feminino', price: 45.00 },
-        { id: 2, name: 'Corte Masculino', price: 25.00 },
-        { id: 3, name: 'Coloração', price: 120.00 },
-        { id: 4, name: 'Manicure', price: 20.00 },
-        { id: 5, name: 'Pedicure', price: 25.00 }
-      ]
-      setServices(mockServices)
+      const servicesResponse = await apiService.get('/api/services/')
+      console.log('Loaded services from backend:', servicesResponse)
+      const servicesData = Array.isArray(servicesResponse) ? servicesResponse : []
+      setServices(servicesData)
     } catch (error) {
       console.error('Error loading services:', error)
       setServices([])
@@ -246,10 +232,35 @@ const AppointmentsSection = () => {
     setShowForm(true)
   }
 
-  const handleEdit = (appointment) => {
-    setEditingAppointment(appointment)
-    setSelectedTeamMember(appointment.team_member_id) // Set selected team member for editing
-    setShowForm(true)
+  const handleEdit = async (appointment) => {
+    try {
+      // Fetch detailed appointment data from backend for editing
+      const detailedAppointment = await apiService.get(`/api/appointments/${appointment.id}/`)
+      console.log('Detailed appointment data:', detailedAppointment)
+      
+      // Transform the detailed data to match form field expectations
+      const transformedAppointment = {
+        ...detailedAppointment,
+        // Extract IDs from the nested objects
+        client_id: detailedAppointment.client?.id,
+        team_member_id: detailedAppointment.team_member?.id,
+        // Extract service IDs from the services array
+        services: detailedAppointment.services?.map(service => service.id) || [],
+        // Keep other fields as they are
+        appointment_date: detailedAppointment.appointment_date,
+        appointment_time: detailedAppointment.appointment_time,
+        status: detailedAppointment.status,
+        notes: detailedAppointment.notes || ''
+      }
+      
+      console.log('Transformed appointment for editing:', transformedAppointment)
+      setEditingAppointment(transformedAppointment)
+      setSelectedTeamMember(transformedAppointment.team_member_id)
+      setShowForm(true)
+    } catch (error) {
+      console.error('Error fetching appointment details for editing:', error)
+      alert('Erro ao carregar detalhes do agendamento para edição.')
+    }
   }
 
   const handleDelete = async (appointment) => {
@@ -339,6 +350,7 @@ const AppointmentsSection = () => {
       } else {
         // Create new appointment in backend
         try {
+          console.log('Sending appointment data to backend:', appointmentData)
           const newAppointment = await apiService.post('/api/appointments/', appointmentData)
           // Backend returns the appointment, but we need to add display names for frontend
           const newWithNames = {

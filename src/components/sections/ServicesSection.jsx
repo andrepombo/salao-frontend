@@ -93,60 +93,11 @@ const ServicesSection = () => {
   const loadServices = async () => {
     try {
       setIsLoading(true)
-      // Mock data for development
-      const mockServices = [
-        {
-          id: 1,
-          name: 'Corte Feminino',
-          service_type: 'cabelo',
-          description: 'Corte de cabelo feminino com lavagem e finalização',
-          duration_minutes: 60,
-          price: 45.00,
-          is_active: true,
-          created_at: '2024-01-10T08:00:00Z'
-        },
-        {
-          id: 2,
-          name: 'Corte Masculino',
-          service_type: 'cabelo',
-          description: 'Corte de cabelo masculino tradicional',
-          duration_minutes: 30,
-          price: 25.00,
-          is_active: true,
-          created_at: '2024-01-10T08:30:00Z'
-        },
-        {
-          id: 3,
-          name: 'Coloração Completa',
-          service_type: 'cabelo',
-          description: 'Coloração completa do cabelo com produtos premium',
-          duration_minutes: 180,
-          price: 120.00,
-          is_active: true,
-          created_at: '2024-01-10T09:00:00Z'
-        },
-        {
-          id: 4,
-          name: 'Manicure',
-          service_type: 'unhas',
-          description: 'Cuidados completos para as unhas das mãos',
-          duration_minutes: 45,
-          price: 20.00,
-          is_active: true,
-          created_at: '2024-01-10T09:30:00Z'
-        },
-        {
-          id: 5,
-          name: 'Barba Completa',
-          service_type: 'barba',
-          description: 'Aparar e modelar barba com produtos especializados',
-          duration_minutes: 40,
-          price: 30.00,
-          is_active: true,
-          created_at: '2024-01-10T10:00:00Z'
-        }
-      ]
-      setServices(mockServices)
+      const response = await apiService.get('/api/services/')
+      console.log('Loaded services from backend:', response)
+      // Handle paginated response from Django REST framework
+      const servicesData = response.results || response || []
+      setServices(servicesData)
     } catch (error) {
       console.error('Error loading services:', error)
       setServices([])
@@ -166,14 +117,14 @@ const ServicesSection = () => {
   }
 
   const handleDelete = async (service) => {
-    if (window.confirm(`Are you sure you want to delete ${service.name}?`)) {
+    if (window.confirm(`Tem certeza que deseja excluir ${service.name}?`)) {
       try {
-        // await apiService.delete(`/api/services/${service.id}/`)
+        await apiService.delete(`/api/services/${service.id}/`)
         setServices(prev => prev.filter(s => s.id !== service.id))
-        alert('Service deleted successfully!')
+        alert('Serviço excluído com sucesso!')
       } catch (error) {
         console.error('Error deleting service:', error)
-        alert('Error deleting service. Please try again.')
+        alert('Erro ao excluir serviço. Tente novamente.')
       }
     }
   }
@@ -182,27 +133,31 @@ const ServicesSection = () => {
     try {
       setIsSubmitting(true)
       
+      // Clean up empty string fields - convert to null for optional fields
+      const apiData = { ...formData }
+      if (apiData.description === '') apiData.description = null
+      
+      // Debug: Log the data being sent to API
+      console.log('Sending service data to API:', apiData)
+      
       if (editingService) {
         // Update existing service
-        const updatedService = { ...editingService, ...formData }
+        const updatedService = await apiService.put(`/api/services/${editingService.id}/`, apiData)
         setServices(prev => prev.map(s => s.id === editingService.id ? updatedService : s))
-        alert('Service updated successfully!')
+        alert('Serviço atualizado com sucesso!')
       } else {
         // Create new service
-        const newService = { 
-          id: Date.now(), 
-          ...formData, 
-          created_at: new Date().toISOString() 
-        }
+        const newService = await apiService.post('/api/services/', apiData)
         setServices(prev => [...prev, newService])
-        alert('Service created successfully!')
+        alert('Serviço criado com sucesso!')
       }
       
       setShowForm(false)
       setEditingService(null)
     } catch (error) {
       console.error('Error saving service:', error)
-      alert('Error saving service. Please try again.')
+      console.error('Error details:', error.response?.data || error.message)
+      alert('Erro ao salvar serviço. Tente novamente.')
     } finally {
       setIsSubmitting(false)
     }

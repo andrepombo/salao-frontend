@@ -13,17 +13,20 @@ const ClientsSection = () => {
   const columns = [
     { key: 'name', label: 'Nome' },
     { 
-      key: 'phone', 
+      key: 'formatted_phone', 
       label: 'Telefone',
       type: 'custom',
-      render: (value) => {
-        // Apply Brazilian phone mask: (xx) xxxxx-xxxx
-        if (!value) return '-'
-        const digits = value.replace(/\D/g, '')
-        if (digits.length === 11) {
-          return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
+      render: (value, row) => {
+        // Use formatted_phone from API if available, otherwise format the raw phone
+        if (value) return value
+        if (row.phone) {
+          const digits = row.phone.replace(/\D/g, '')
+          if (digits.length === 11) {
+            return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
+          }
+          return row.phone
         }
-        return value // Return original if not 11 digits
+        return '-'
       }
     },
     { key: 'email', label: 'Email' },
@@ -105,33 +108,13 @@ const ClientsSection = () => {
   const loadClients = async () => {
     try {
       setIsLoading(true)
-      // For now, using mock data since backend endpoints might not be ready
-      const mockClients = [
-        {
-          id: 1,
-          name: 'Maria Silva',
-          phone: '11999887766',
-          email: 'maria@email.com',
-          gender: 'F',
-          birthday: '1990-05-15',
-          address: 'Rua das Flores, 123',
-          created_at: '2024-01-15T10:30:00Z'
-        },
-        {
-          id: 2,
-          name: 'João Santos',
-          phone: '11888776655',
-          email: 'joao@email.com',
-          gender: 'M',
-          birthday: '1985-12-03',
-          address: 'Av. Paulista, 456',
-          created_at: '2024-01-20T14:15:00Z'
-        }
-      ]
-      setClients(mockClients)
+      const response = await apiService.get('/api/clients/')
+      console.log('Loaded clients from backend:', response)
+      // Handle paginated response from Django REST framework
+      const clientsData = response.results || response || []
+      setClients(clientsData)
     } catch (error) {
       console.error('Error loading clients:', error)
-      // For development, we'll use mock data
       setClients([])
     } finally {
       setIsLoading(false)
@@ -151,7 +134,7 @@ const ClientsSection = () => {
   const handleDelete = async (client) => {
     if (window.confirm(`Tem certeza que deseja excluir ${client.name}?`)) {
       try {
-        // await apiService.delete(`/api/clients/${client.id}/`)
+        await apiService.delete(`/api/clients/${client.id}/`)
         setClients(prev => prev.filter(c => c.id !== client.id))
         alert('Cliente excluído com sucesso!')
       } catch (error) {
@@ -165,20 +148,31 @@ const ClientsSection = () => {
     try {
       setIsSubmitting(true)
       
+      // Extract raw phone digits for API submission and clean up empty fields
+      const apiData = { ...formData }
+      
+      // Clean phone number - remove formatting, keep only digits
+      if (apiData.phone) {
+        apiData.phone = apiData.phone.replace(/\D/g, '') // Remove formatting, keep only digits
+      }
+      
+      // Clean up empty string fields - convert to null for optional fields
+      if (apiData.email === '') apiData.email = null
+      if (apiData.address === '') apiData.address = null
+      if (apiData.birthday === '') apiData.birthday = null
+      if (apiData.gender === '') apiData.gender = null
+      
+      // Debug: Log the data being sent to API
+      console.log('Sending data to API:', apiData)
+      
       if (editingClient) {
         // Update existing client
-        // const updatedClient = await apiService.put(`/api/clients/${editingClient.id}/`, formData)
-        const updatedClient = { ...editingClient, ...formData }
+        const updatedClient = await apiService.put(`/api/clients/${editingClient.id}/`, apiData)
         setClients(prev => prev.map(c => c.id === editingClient.id ? updatedClient : c))
         alert('Cliente atualizado com sucesso!')
       } else {
         // Create new client
-        // const newClient = await apiService.post('/api/clients/', formData)
-        const newClient = { 
-          id: Date.now(), 
-          ...formData, 
-          created_at: new Date().toISOString() 
-        }
+        const newClient = await apiService.post('/api/clients/', apiData)
         setClients(prev => [...prev, newClient])
         alert('Cliente criado com sucesso!')
       }
@@ -187,6 +181,7 @@ const ClientsSection = () => {
       setEditingClient(null)
     } catch (error) {
       console.error('Erro ao salvar cliente:', error)
+      console.error('Error details:', error.response?.data || error.message)
       alert('Erro ao salvar cliente. Tente novamente.')
     } finally {
       setIsSubmitting(false)

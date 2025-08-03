@@ -13,7 +13,23 @@ const TeamSection = () => {
 
   const columns = [
     { key: 'name', label: 'Nome' },
-    { key: 'phone', label: 'Telefone' },
+    { 
+      key: 'formatted_phone', 
+      label: 'Telefone',
+      type: 'custom',
+      render: (value, row) => {
+        // Use formatted_phone from API if available, otherwise format the raw phone
+        if (value) return value
+        if (row.phone) {
+          const digits = row.phone.replace(/\D/g, '')
+          if (digits.length === 11) {
+            return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
+          }
+          return row.phone
+        }
+        return '-'
+      }
+    },
     { key: 'email', label: 'Email' },
     { key: 'hire_date', label: 'Data de Contratação', type: 'date' },
     { key: 'is_active', label: 'Status', type: 'boolean' },
@@ -100,36 +116,15 @@ const TeamSection = () => {
   const loadTeamMembers = async () => {
     try {
       setIsLoading(true)
-      // Mock data for development
-      const mockTeamMembers = [
-        {
-          id: 1,
-          name: 'Ana Costa',
-          phone: '11987654321',
-          email: 'ana@salon.com',
-          hire_date: '2023-03-15',
-          is_active: true,
-          specialties: [1, 2, 3], // Corte Feminino, Corte Masculino, Coloração
-          address: 'Rua Augusta, 789',
-          created_at: '2023-03-15T09:00:00Z'
-        },
-        {
-          id: 2,
-          name: 'Carlos Mendes',
-          phone: '11876543210',
-          email: 'carlos@salon.com',
-          hire_date: '2023-06-01',
-          is_active: true,
-          specialties: [4, 5], // Manicure, Pedicure
-          address: 'Av. Faria Lima, 321',
-          created_at: '2023-06-01T10:30:00Z'
-        }
-      ]
+      const response = await apiService.get('/api/team/')
+      console.log('Loaded team members from backend:', response)
+      // Handle paginated response from Django REST framework
+      const teamData = response.results || response || []
       
-      // Add dynamic specialties_count to each team member
-      const processedTeamMembers = mockTeamMembers.map(member => ({
+      // Add dynamic specialties_count to each team member if not already present
+      const processedTeamMembers = teamData.map(member => ({
         ...member,
-        specialties_count: member.specialties ? member.specialties.length : 0
+        specialties_count: member.specialties_count || (member.specialties ? member.specialties.length : 0)
       }))
       
       setTeamMembers(processedTeamMembers)
@@ -143,15 +138,11 @@ const TeamSection = () => {
 
   const loadServices = async () => {
     try {
-      // Mock services data
-      const mockServices = [
-        { id: 1, name: 'Corte Feminino', service_type: 'cabelo' },
-        { id: 2, name: 'Corte Masculino', service_type: 'cabelo' },
-        { id: 3, name: 'Coloração', service_type: 'cabelo' },
-        { id: 4, name: 'Manicure', service_type: 'unhas' },
-        { id: 5, name: 'Pedicure', service_type: 'unhas' }
-      ]
-      setServices(mockServices)
+      const response = await apiService.get('/api/services/')
+      console.log('Loaded services from backend:', response)
+      // Handle paginated response from Django REST framework
+      const servicesData = response.results || response || []
+      setServices(servicesData)
     } catch (error) {
       console.error('Error loading services:', error)
       setServices([])
@@ -171,7 +162,7 @@ const TeamSection = () => {
   const handleDelete = async (member) => {
     if (window.confirm(`Tem certeza que deseja excluir ${member.name}?`)) {
       try {
-        // await apiService.delete(`/api/team/${member.id}/`)
+        await apiService.delete(`/api/team/${member.id}/`)
         setTeamMembers(prev => prev.filter(m => m.id !== member.id))
         alert('Profissional excluído com sucesso!')
       } catch (error) {
@@ -185,23 +176,29 @@ const TeamSection = () => {
     try {
       setIsSubmitting(true)
       
+      // Extract raw phone digits for API submission and clean up empty fields
+      const apiData = { ...formData }
+      
+      // Clean phone number - remove formatting, keep only digits
+      if (apiData.phone) {
+        apiData.phone = apiData.phone.replace(/\D/g, '') // Remove formatting, keep only digits
+      }
+      
+      // Clean up empty string fields - convert to null for optional fields
+      if (apiData.email === '') apiData.email = null
+      if (apiData.address === '') apiData.address = null
+      
+      // Debug: Log the data being sent to API
+      console.log('Sending team data to API:', apiData)
+      
       if (editingMember) {
         // Update existing team member
-        const updatedMember = { 
-          ...editingMember, 
-          ...formData,
-          specialties_count: formData.specialties ? formData.specialties.length : 0
-        }
+        const updatedMember = await apiService.put(`/api/team/${editingMember.id}/`, apiData)
         setTeamMembers(prev => prev.map(m => m.id === editingMember.id ? updatedMember : m))
         alert('Profissional atualizado com sucesso!')
       } else {
         // Create new team member
-        const newMember = { 
-          id: Date.now(), 
-          ...formData, 
-          specialties_count: formData.specialties ? formData.specialties.length : 0,
-          created_at: new Date().toISOString() 
-        }
+        const newMember = await apiService.post('/api/team/', apiData)
         setTeamMembers(prev => [...prev, newMember])
         alert('Profissional criado com sucesso!')
       }
@@ -210,7 +207,8 @@ const TeamSection = () => {
       setEditingMember(null)
     } catch (error) {
       console.error('Error saving team member:', error)
-      alert('Error saving team member. Please try again.')
+      console.error('Error details:', error.response?.data || error.message)
+      alert('Erro ao salvar profissional. Tente novamente.')
     } finally {
       setIsSubmitting(false)
     }
