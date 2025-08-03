@@ -159,66 +159,29 @@ const AppointmentsSection = () => {
   const loadAppointments = async () => {
     try {
       setIsLoading(true)
-      // Mock data for development
-      const mockAppointments = [
-        {
-          id: 1,
-          client_id: 1,
-          client_name: 'Maria Silva',
-          team_member_id: 1,
-          team_member_name: 'Ana Costa',
-          appointment_date: '2024-08-04',
-          appointment_time: '10:00',
-          status: 'confirmed',
-          total_price: 65.00,
-          services_list: 'Corte Feminino, Manicure',
-          notes: 'Cliente preferencial',
-          created_at: '2024-08-01T10:00:00Z'
-        },
-        {
-          id: 2,
-          client_id: 2,
-          client_name: 'João Santos',
-          team_member_id: 2,
-          team_member_name: 'Carlos Mendes',
-          appointment_date: '2024-08-04',
-          appointment_time: '14:30',
-          status: 'scheduled',
-          total_price: 55.00,
-          services_list: 'Corte Masculino, Barba Completa',
-          notes: 'Primeira visita',
-          created_at: '2024-08-01T14:30:00Z'
-        },
-        {
-          id: 3,
-          client_id: 1,
-          client_name: 'Maria Silva',
-          team_member_id: 1,
-          team_member_name: 'Ana Costa',
-          appointment_date: '2024-08-05',
-          appointment_time: '15:00',
-          status: 'completed',
-          total_price: 120.00,
-          services_list: 'Coloração Completa',
-          notes: 'Mudança de cor',
-          created_at: '2024-08-02T15:00:00Z'
-        },
-        {
-          id: 4,
-          client_id: 1,
-          client_name: 'Maria Silva',
-          team_member_id: 1,
-          team_member_name: 'Ana Costa',
-          appointment_date: '2024-08-05',
-          appointment_time: '16:00',
-          status: 'scheduled',
-          total_price: 190.00,
-          services_list: 'Corte Feminino, Corte Masculino, Coloração',
-          notes: 'Agendamento para família',
-          created_at: '2024-08-03T16:00:00Z'
+      
+      // Try to fetch real data from backend first
+      try {
+        const response = await apiService.get('/api/appointments/')
+        console.log('AppointmentsSection - API Response:', response)
+        
+        // Handle both paginated and direct array responses safely
+        let appointmentsData = []
+        
+        if (Array.isArray(response)) {
+          appointmentsData = response
+        } else if (response && Array.isArray(response.results)) {
+          appointmentsData = response.results
+        } else if (response && response.data && Array.isArray(response.data)) {
+          appointmentsData = response.data
         }
-      ]
-      setAppointments(mockAppointments)
+        
+        console.log('AppointmentsSection - Using real data:', appointmentsData.length, 'appointments')
+        setAppointments(appointmentsData)
+      } catch (apiError) {
+        console.error('AppointmentsSection - Failed to load appointments from backend:', apiError)
+        setAppointments([])
+      }
     } catch (error) {
       console.error('Error loading appointments:', error)
       setAppointments([])
@@ -290,14 +253,21 @@ const AppointmentsSection = () => {
   }
 
   const handleDelete = async (appointment) => {
-    if (window.confirm(`Are you sure you want to delete this appointment for ${appointment.client_name}?`)) {
+    if (window.confirm(`Tem certeza que deseja excluir este agendamento para ${appointment.client_name}?`)) {
       try {
-        // await apiService.delete(`/api/appointments/${appointment.id}/`)
-        setAppointments(prev => prev.filter(a => a.id !== appointment.id))
-        alert('Appointment deleted successfully!')
+        // Try to delete from backend first
+        try {
+          await apiService.delete(`/api/appointments/${appointment.id}/`)
+          setAppointments(prev => prev.filter(a => a.id !== appointment.id))
+          alert('Agendamento excluído com sucesso!')
+        } catch (apiError) {
+          console.warn('Failed to delete appointment from backend, deleting locally:', apiError)
+          setAppointments(prev => prev.filter(a => a.id !== appointment.id))
+          alert('Agendamento excluído localmente (backend indisponível)')
+        }
       } catch (error) {
         console.error('Error deleting appointment:', error)
-        alert('Error deleting appointment. Please try again.')
+        alert('Erro ao excluir agendamento. Tente novamente.')
       }
     }
   }
@@ -323,8 +293,22 @@ const AppointmentsSection = () => {
         }
       })
       
+      // Prepare data for backend API (Django expects specific field names)
       const appointmentData = {
-        ...formData,
+        client: parseInt(formData.client_id),
+        team_member: parseInt(formData.team_member_id),
+        services: selectedServices.map(id => parseInt(id)),
+        appointment_date: formData.appointment_date,
+        appointment_time: formData.appointment_time,
+        status: formData.status || 'scheduled',
+        notes: formData.notes || ''
+      }
+      
+      // For local state management, also include display names
+      const appointmentDataWithNames = {
+        ...appointmentData,
+        client_id: parseInt(formData.client_id),
+        team_member_id: parseInt(formData.team_member_id),
         client_name: client?.name || '',
         team_member_name: teamMember?.name || '',
         total_price: totalPrice,
@@ -332,19 +316,51 @@ const AppointmentsSection = () => {
       }
       
       if (editingAppointment) {
-        // Update existing appointment
-        const updatedAppointment = { ...editingAppointment, ...appointmentData }
-        setAppointments(prev => prev.map(a => a.id === editingAppointment.id ? updatedAppointment : a))
-        alert('Agendamento atualizado com sucesso!')
-      } else {
-        // Create new appointment
-        const newAppointment = { 
-          id: Date.now(), 
-          ...appointmentData, 
-          created_at: new Date().toISOString() 
+        // Update existing appointment in backend
+        try {
+          const updatedAppointment = await apiService.put(`/api/appointments/${editingAppointment.id}/`, appointmentData)
+          // Backend returns the appointment, but we need to add display names for frontend
+          const updatedWithNames = {
+            ...updatedAppointment,
+            client_id: appointmentDataWithNames.client_id,
+            team_member_id: appointmentDataWithNames.team_member_id,
+            client_name: appointmentDataWithNames.client_name,
+            team_member_name: appointmentDataWithNames.team_member_name,
+            services_list: appointmentDataWithNames.services_list
+          }
+          setAppointments(prev => prev.map(a => a.id === editingAppointment.id ? updatedWithNames : a))
+          alert('Agendamento atualizado com sucesso!')
+        } catch (apiError) {
+          console.warn('Failed to update appointment in backend, updating locally:', apiError)
+          const updatedAppointment = { ...editingAppointment, ...appointmentDataWithNames }
+          setAppointments(prev => prev.map(a => a.id === editingAppointment.id ? updatedAppointment : a))
+          alert('Agendamento atualizado localmente (backend indisponível)')
         }
-        setAppointments(prev => [...prev, newAppointment])
-        alert('Agendamento criado com sucesso!')
+      } else {
+        // Create new appointment in backend
+        try {
+          const newAppointment = await apiService.post('/api/appointments/', appointmentData)
+          // Backend returns the appointment, but we need to add display names for frontend
+          const newWithNames = {
+            ...newAppointment,
+            client_id: appointmentDataWithNames.client_id,
+            team_member_id: appointmentDataWithNames.team_member_id,
+            client_name: appointmentDataWithNames.client_name,
+            team_member_name: appointmentDataWithNames.team_member_name,
+            services_list: appointmentDataWithNames.services_list
+          }
+          setAppointments(prev => [...prev, newWithNames])
+          alert('Agendamento criado com sucesso!')
+        } catch (apiError) {
+          console.warn('Failed to create appointment in backend, creating locally:', apiError)
+          const newAppointment = { 
+            id: Date.now(), 
+            ...appointmentDataWithNames, 
+            created_at: new Date().toISOString() 
+          }
+          setAppointments(prev => [...prev, newAppointment])
+          alert('Agendamento criado localmente (backend indisponível)')
+        }
       }
       
       setShowForm(false)

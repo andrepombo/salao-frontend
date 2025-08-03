@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { apiService } from '../../services/api'
 import './Dashboard.css'
 
 const Dashboard = () => {
@@ -22,69 +23,52 @@ const Dashboard = () => {
     try {
       setIsLoading(true)
       
-      // Mock data for development
-      const mockStats = {
-        totalClients: 45,
-        totalTeamMembers: 8,
-        totalServices: 12,
-        todayAppointments: 7,
-        weeklyRevenue: 1250.00,
-        monthlyRevenue: 5400.00
+      // Fetch real data from backend
+      const [appointmentsData, clientsData, teamData, servicesData] = await Promise.all([
+        apiService.get('/api/appointments/'),
+        apiService.get('/api/clients/'),
+        apiService.get('/api/team/'),
+        apiService.get('/api/services/')
+      ])
+      
+      console.log('Dashboard fetched real data:', {
+        appointments: appointmentsData.length,
+        clients: clientsData.length,
+        team: teamData.length,
+        services: servicesData.length
+      })
+      
+      // Calculate revenue from completed appointments
+      const completedAppointments = appointmentsData.filter(apt => apt.status === 'completed')
+      const now = new Date()
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+      
+      const weeklyRevenue = completedAppointments
+        .filter(apt => new Date(apt.appointment_date) >= weekAgo)
+        .reduce((sum, apt) => sum + (apt.total_price || 0), 0)
+      
+      const monthlyRevenue = completedAppointments
+        .filter(apt => new Date(apt.appointment_date) >= monthAgo)
+        .reduce((sum, apt) => sum + (apt.total_price || 0), 0)
+      
+      // Calculate stats from real data
+      const stats = {
+        totalClients: clientsData.length,
+        totalTeamMembers: teamData.length,
+        totalServices: servicesData.length,
+        todayAppointments: appointmentsData.length,
+        weeklyRevenue: weeklyRevenue,
+        monthlyRevenue: monthlyRevenue
       }
       
-      const mockRecentAppointments = [
-        {
-          id: 1,
-          client_name: 'Maria Silva',
-          team_member_name: 'Ana Costa',
-          service: 'Corte Feminino',
-          time: '10:00',
-          status: 'confirmed'
-        },
-        {
-          id: 2,
-          client_name: 'João Santos',
-          team_member_name: 'Carlos Mendes',
-          service: 'Corte + Barba',
-          time: '14:30',
-          status: 'scheduled'
-        },
-        {
-          id: 3,
-          client_name: 'Ana Oliveira',
-          team_member_name: 'Ana Costa',
-          service: 'Coloração',
-          time: '16:00',
-          status: 'in_progress'
-        },
-        {
-          id: 4,
-          client_name: 'Pedro Costa',
-          team_member_name: 'Carlos Mendes',
-          service: 'Manicure',
-          time: '11:30',
-          status: 'scheduled'
-        },
-        {
-          id: 5,
-          client_name: 'Lucia Ferreira',
-          team_member_name: 'Ana Costa',
-          service: 'Corte + Escova',
-          time: '09:00',
-          status: 'completed'
-        },
-        {
-          id: 6,
-          client_name: 'Roberto Lima',
-          team_member_name: 'Carlos Mendes',
-          service: 'Corte Masculino',
-          time: '15:30',
-          status: 'confirmed'
-        }
-      ]
+      setStats(stats)
+      setRecentAppointments(appointmentsData)
       
-      setStats(mockStats)
-      setRecentAppointments(mockRecentAppointments)
+      console.log('Dashboard data loaded successfully:', {
+        totalAppointments: appointmentsData.length,
+        stats
+      })
     } catch (error) {
       console.error('Error loading dashboard data:', error)
     } finally {
@@ -205,10 +189,10 @@ const Dashboard = () => {
                 <div className="appointments-list">
                   {appointments.map(appointment => (
                     <div key={appointment.id} className="appointment-item">
-                      <div className="appointment-time">{appointment.time}</div>
+                      <div className="appointment-time">{appointment.appointment_time}</div>
                       <div className="appointment-details">
                         <div className="appointment-client">{appointment.client_name}</div>
-                        <div className="appointment-service">{appointment.service}</div>
+                        <div className="appointment-service">{appointment.services_list}</div>
                         <div className="appointment-staff">com {appointment.team_member_name}</div>
                       </div>
                     </div>
