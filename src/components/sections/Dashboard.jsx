@@ -31,19 +31,17 @@ const Dashboard = () => {
         apiService.get('/api/services/')
       ])
       
-      // Ensure data is in array format, fallback to empty arrays if not
-      const appointmentsData = Array.isArray(appointmentsResponse) ? appointmentsResponse : []
-      const clientsData = Array.isArray(clientsResponse) ? clientsResponse : []
-      const teamData = Array.isArray(teamResponse) ? teamResponse : []
-      const servicesData = Array.isArray(servicesResponse) ? servicesResponse : []
+      // Handle paginated responses from Django REST framework
+      const appointmentsData = appointmentsResponse?.results || appointmentsResponse || []
+      const clientsData = clientsResponse?.results || clientsResponse || []
+      const teamData = teamResponse?.results || teamResponse || []
+      const servicesData = servicesResponse?.results || servicesResponse || []
       
       console.log('Dashboard fetched real data:', {
         appointments: appointmentsData.length,
         clients: clientsData.length,
         team: teamData.length,
-        services: servicesData.length,
-        appointmentsType: typeof appointmentsResponse,
-        appointmentsIsArray: Array.isArray(appointmentsResponse)
+        services: servicesData.length
       })
       
       // Calculate revenue from completed appointments
@@ -54,11 +52,11 @@ const Dashboard = () => {
       
       const weeklyRevenue = completedAppointments
         .filter(apt => new Date(apt.appointment_date) >= weekAgo)
-        .reduce((sum, apt) => sum + (apt.total_price || 0), 0)
+        .reduce((sum, apt) => sum + (parseFloat(apt.total_price) || 0), 0)
       
       const monthlyRevenue = completedAppointments
         .filter(apt => new Date(apt.appointment_date) >= monthAgo)
-        .reduce((sum, apt) => sum + (apt.total_price || 0), 0)
+        .reduce((sum, apt) => sum + (parseFloat(apt.total_price) || 0), 0)
       
       // Calculate stats from real data
       const stats = {
@@ -75,6 +73,7 @@ const Dashboard = () => {
       
       console.log('Dashboard data loaded successfully:', {
         totalAppointments: appointmentsData.length,
+        appointmentsByStatus: groupAppointmentsByStatus(appointmentsData),
         stats
       })
     } catch (error) {
