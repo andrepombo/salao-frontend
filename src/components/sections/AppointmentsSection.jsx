@@ -26,22 +26,38 @@ const AppointmentsSection = () => {
       .map(service => ({ value: service.id, label: `${service.name} - R$ ${service.price.toFixed(2)}` }))
   }
 
+  // Function to get Portuguese status label from English key
+  const getStatusLabel = (statusKey) => {
+    const statusMap = {
+      'scheduled': 'Agendado',
+      'confirmed': 'Confirmado', 
+      'in_progress': 'Em Andamento',
+      'completed': 'Concluído',
+      'cancelled': 'Cancelado',
+      'no_show': 'Não Compareceu'
+    }
+    return statusMap[statusKey] || statusKey
+  }
+
   const columns = [
     { key: 'client_name', label: 'Cliente' },
     { key: 'team_member_name', label: 'Profissional' },
     { key: 'appointment_date', label: 'Data', type: 'date' },
     { key: 'appointment_time', label: 'Horário', type: 'time' },
-    { key: 'status', label: 'Status', type: 'badge', badgeColor: (value) => {
-      const colors = {
-        'scheduled': 'info',
-        'confirmed': 'success',
-        'in_progress': 'warning',
-        'completed': 'success',
-        'cancelled': 'danger',
-        'no_show': 'danger'
+    { key: 'status', label: 'Status', type: 'badge', 
+      render: (value) => getStatusLabel(value),
+      badgeColor: (value) => {
+        const colors = {
+          'scheduled': 'info',
+          'confirmed': 'success', 
+          'in_progress': 'warning',
+          'completed': 'success',
+          'cancelled': 'danger',
+          'no_show': 'danger'
+        }
+        return colors[value] || 'default'
       }
-      return colors[value] || 'default'
-    }},
+    },
     { key: 'total_price', label: 'Total', type: 'currency' },
     { key: 'services_list', label: 'Serviços' }
   ]
@@ -151,13 +167,13 @@ const AppointmentsSection = () => {
           client_name: 'Maria Silva',
           team_member_id: 1,
           team_member_name: 'Ana Costa',
-          appointment_date: '2024-08-05',
+          appointment_date: '2024-08-04',
           appointment_time: '10:00',
           status: 'confirmed',
           total_price: 65.00,
           services_list: 'Corte Feminino, Manicure',
-          notes: 'Cliente prefere corte em camadas',
-          created_at: '2024-08-01T09:00:00Z'
+          notes: 'Cliente preferencial',
+          created_at: '2024-08-01T10:00:00Z'
         },
         {
           id: 2,
@@ -165,13 +181,13 @@ const AppointmentsSection = () => {
           client_name: 'João Santos',
           team_member_id: 2,
           team_member_name: 'Carlos Mendes',
-          appointment_date: '2024-08-05',
+          appointment_date: '2024-08-04',
           appointment_time: '14:30',
           status: 'scheduled',
           total_price: 55.00,
           services_list: 'Corte Masculino, Barba Completa',
-          notes: '',
-          created_at: '2024-08-02T11:15:00Z'
+          notes: 'Primeira visita',
+          created_at: '2024-08-01T14:30:00Z'
         },
         {
           id: 3,
@@ -179,13 +195,27 @@ const AppointmentsSection = () => {
           client_name: 'Maria Silva',
           team_member_id: 1,
           team_member_name: 'Ana Costa',
-          appointment_date: '2024-08-06',
+          appointment_date: '2024-08-05',
           appointment_time: '15:00',
           status: 'completed',
           total_price: 120.00,
           services_list: 'Coloração Completa',
-          notes: 'Coloração loiro mel',
-          created_at: '2024-07-30T16:20:00Z'
+          notes: 'Mudança de cor',
+          created_at: '2024-08-02T15:00:00Z'
+        },
+        {
+          id: 4,
+          client_id: 1,
+          client_name: 'Maria Silva',
+          team_member_id: 1,
+          team_member_name: 'Ana Costa',
+          appointment_date: '2024-08-05',
+          appointment_time: '16:00',
+          status: 'scheduled',
+          total_price: 190.00,
+          services_list: 'Corte Feminino, Corte Masculino, Coloração',
+          notes: 'Agendamento para família',
+          created_at: '2024-08-03T16:00:00Z'
         }
       ]
       setAppointments(mockAppointments)
