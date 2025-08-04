@@ -84,9 +84,34 @@ const DataTable = ({
           // For date range filters
           if (!filterValue) return true
           
-          const startDate = filterValue.start ? new Date(filterValue.start) : null
-          const endDate = filterValue.end ? new Date(filterValue.end) : null
-          const itemDate = new Date(itemValue)
+          // Parse date strings as local dates to avoid timezone issues
+          let startDate = null
+          let endDate = null
+          let itemDate = null
+          
+          // Parse start date if exists
+          if (filterValue.start) {
+            const startParts = filterValue.start.split('-')
+            if (startParts.length === 3) {
+              startDate = new Date(parseInt(startParts[0]), parseInt(startParts[1]) - 1, parseInt(startParts[2]))
+            }
+          }
+          
+          // Parse end date if exists
+          if (filterValue.end) {
+            const endParts = filterValue.end.split('-')
+            if (endParts.length === 3) {
+              endDate = new Date(parseInt(endParts[0]), parseInt(endParts[1]) - 1, parseInt(endParts[2]))
+            }
+          }
+          
+          // Parse item date
+          const itemParts = itemValue.split('-')
+          if (itemParts.length === 3) {
+            itemDate = new Date(parseInt(itemParts[0]), parseInt(itemParts[1]) - 1, parseInt(itemParts[2]))
+          } else {
+            itemDate = new Date(itemValue)
+          }
           
           // If we have both start and end dates, check if item is in range
           if (startDate && endDate) {
@@ -247,10 +272,28 @@ const DataTable = ({
                     <span className="mui-date-label">De:</span>
                     <DatePicker
                       value={(activeFilters[filter.key] && activeFilters[filter.key].start) ? 
-                        new Date(activeFilters[filter.key].start) : null}
+                        (() => {
+                          // Parse date string as local date to avoid timezone issues
+                          const parts = activeFilters[filter.key].start.split('-')
+                          if (parts.length === 3) {
+                            return new Date(
+                              parseInt(parts[0]), 
+                              parseInt(parts[1]) - 1, 
+                              parseInt(parts[2])
+                            )
+                          }
+                          return null
+                        })() : null}
                       onChange={(date) => {
                         const currentValue = activeFilters[filter.key] || {}
-                        const dateStr = date ? date.toISOString().split('T')[0] : ''
+                        let dateStr = ''
+                        if (date) {
+                          // Use local date parts to avoid timezone issues
+                          const year = date.getFullYear()
+                          const month = String(date.getMonth() + 1).padStart(2, '0')
+                          const day = String(date.getDate()).padStart(2, '0')
+                          dateStr = `${year}-${month}-${day}`
+                        }
                         handleFilterChange(filter.key, { ...currentValue, start: dateStr })
                       }}
                       slotProps={{ 
@@ -268,10 +311,28 @@ const DataTable = ({
                     <span className="mui-date-label">Até:</span>
                     <DatePicker
                       value={(activeFilters[filter.key] && activeFilters[filter.key].end) ? 
-                        new Date(activeFilters[filter.key].end) : null}
+                        (() => {
+                          // Parse date string as local date to avoid timezone issues
+                          const parts = activeFilters[filter.key].end.split('-')
+                          if (parts.length === 3) {
+                            return new Date(
+                              parseInt(parts[0]), 
+                              parseInt(parts[1]) - 1, 
+                              parseInt(parts[2])
+                            )
+                          }
+                          return null
+                        })() : null}
                       onChange={(date) => {
                         const currentValue = activeFilters[filter.key] || {}
-                        const dateStr = date ? date.toISOString().split('T')[0] : ''
+                        let dateStr = ''
+                        if (date) {
+                          // Use local date parts to avoid timezone issues
+                          const year = date.getFullYear()
+                          const month = String(date.getMonth() + 1).padStart(2, '0')
+                          const day = String(date.getDate()).padStart(2, '0')
+                          dateStr = `${year}-${month}-${day}`
+                        }
                         handleFilterChange(filter.key, { ...currentValue, end: dateStr })
                       }}
                       slotProps={{ 
