@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import './DataTable.css'
-import { TextField } from '@mui/material'
+import { TextField, Select, MenuItem, FormControl, InputLabel } from '@mui/material'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
@@ -253,19 +253,22 @@ const DataTable = ({
             <div key={filter.key} className="filter-item">
               {filter.label && <label htmlFor={`filter-${filter.key}`}>{filter.label}:</label>}
               {filter.type === 'select' ? (
-                <select
-                  id={`filter-${filter.key}`}
-                  value={activeFilters[filter.key] || ''}
-                  onChange={(e) => handleFilterChange(filter.key, e.target.value)}
-                  className="filter-select"
-                >
-                  <option value="">Todos</option>
-                  {filter.options.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                <FormControl size="small" className="mui-select-container">
+                  <Select
+                    id={`filter-${filter.key}`}
+                    value={activeFilters[filter.key] || ''}
+                    onChange={(e) => handleFilterChange(filter.key, e.target.value)}
+                    className="mui-select"
+                    displayEmpty
+                  >
+                    <MenuItem value="">Todos</MenuItem>
+                    {filter.options.map(option => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               ) : filter.type === 'dateRange' ? (
                 <div className="date-range-container">
                   <div className="date-range-field mui-date-field">

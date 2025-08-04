@@ -368,6 +368,14 @@
   width: 180px;
 }
 
+.mui-select-container {
+  min-width: 180px;
+}
+
+.mui-select {
+  font-size: 0.875rem;
+}
+
 /* Override Material-UI styles */
 .MuiInputBase-root.mui-date-input {
   font-size: 0.875rem;

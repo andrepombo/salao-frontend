@@ -488,10 +488,7 @@ const AppointmentsSection = () => {
         { value: 'in_progress', label: 'Em Andamento' },
         { value: 'completed', label: 'Concluído' },
         { value: 'cancelled', label: 'Cancelado' },
-        { value: 'no_show', label: 'Não Compareceu' },
-        { value: 'rescheduled', label: 'Reagendado' },
-        { value: 'pending_payment', label: 'Pagamento Pendente' },
-        { value: 'waiting', label: 'Em Espera' }
+        { value: 'no_show', label: 'Não Compareceu' }
       ]
     }
   ]
