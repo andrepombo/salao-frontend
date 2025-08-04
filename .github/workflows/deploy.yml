@@ -35,8 +35,8 @@ jobs:
           # Build and start the frontend services
           cd /home/${{ secrets.EC2_SSH_USER }}/salao-frontend
 
-          # echo "Cleaning up unused Docker resources..."
-          # sudo docker system prune --volumes -f
+          echo "Cleaning up unused Docker resources..."
+          sudo docker system prune --volumes -f
 
           # echo "Stopping existing containers..."
           # sudo docker-compose down || true
