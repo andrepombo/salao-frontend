@@ -365,7 +365,12 @@ const MuiCrudForm = ({
                   ...commonProps,
                   required: field.required,
                   error: !!errors[field.name],
-                  helperText: errors[field.name] || field.helpText
+                  helperText: errors[field.name] || field.helpText,
+                  sx: {
+                    width: '180px',
+                    minWidth: '180px',
+                    maxWidth: '180px'
+                  }
                 }
               }}
               format="DD/MM/YYYY"
@@ -388,7 +393,12 @@ const MuiCrudForm = ({
                   ...commonProps,
                   required: field.required,
                   error: !!errors[field.name],
-                  helperText: errors[field.name] || field.helpText
+                  helperText: errors[field.name] || field.helpText,
+                  sx: {
+                    width: '150px',
+                    minWidth: '150px',
+                    maxWidth: '150px'
+                  }
                 }
               }}
               format="HH:mm"
