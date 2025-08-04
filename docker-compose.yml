@@ -18,5 +18,5 @@ services:
     #   - "5173:5173"
     environment:
       - NODE_ENV=production
-      # Add any environment variables needed for the frontend
-      # - VITE_API_URL=http://backend:8000
+      # Note: REACT_APP_* variables are build-time only, set in build args above
+      # Runtime environment variables for nginx if needed

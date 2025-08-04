@@ -2,6 +2,10 @@ FROM node:20-alpine as build
 
 WORKDIR /app
 
+# Accept build argument for API URL
+ARG REACT_APP_API_BASE_URL
+ENV REACT_APP_API_BASE_URL=$REACT_APP_API_BASE_URL
+
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
@@ -11,7 +15,7 @@ RUN npm ci
 # Copy the rest of the application code
 COPY . .
 
-# Build the application
+# Build the application with environment variables
 RUN npm run build
 
 # Production stage
