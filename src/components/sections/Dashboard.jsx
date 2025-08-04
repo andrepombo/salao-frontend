@@ -3,17 +3,18 @@ import { apiService } from '../../services/api'
 import './Dashboard.css'
 
 const Dashboard = () => {
+  // Initialize with placeholder data for faster LCP
   const [stats, setStats] = useState({
-    totalClients: 0,
-    totalTeamMembers: 0,
-    totalServices: 0,
-    todayAppointments: 0,
+    totalClients: '...',
+    totalTeamMembers: '...',
+    totalServices: '...',
+    todayAppointments: '...',
     dailyRevenue: 0,
     monthlyRevenue: 0
   })
   
   const [recentAppointments, setRecentAppointments] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false) // Start with false to render immediately
 
   useEffect(() => {
     loadDashboardData()
@@ -41,18 +42,31 @@ const Dashboard = () => {
 
   const loadDashboardData = async () => {
     try {
-      setIsLoading(true)
+      // Don't block initial render with loading state
+      // setIsLoading(true) - removed to prevent blocking
       
-      // Fetch real data from backend
-      const [appointmentsResponse, clientsResponse, teamResponse, servicesResponse] = await Promise.all([
-        apiService.get('/api/appointments/'),
+      // Prioritize appointments data first (most critical for LCP)
+      const appointmentsResponse = await apiService.get('/api/appointments/')
+      const appointmentsData = appointmentsResponse?.results || appointmentsResponse || []
+      
+      // Process appointments immediately for faster display
+      const now = new Date()
+      const todaysAppointments = appointmentsData.filter(apt => {
+        const aptDate = parseDateSafe(apt.appointment_date)
+        return aptDate && isSameDay(aptDate, now)
+      })
+      
+      // Update appointments first
+      setRecentAppointments(todaysAppointments)
+      
+      // Load other data in parallel (non-blocking)
+      const [clientsResponse, teamResponse, servicesResponse] = await Promise.all([
         apiService.get('/api/clients/'),
         apiService.get('/api/team/'),
         apiService.get('/api/services/')
       ])
       
       // Handle paginated responses from Django REST framework
-      const appointmentsData = appointmentsResponse?.results || appointmentsResponse || []
       const clientsData = clientsResponse?.results || clientsResponse || []
       const teamData = teamResponse?.results || teamResponse || []
       const servicesData = servicesResponse?.results || servicesResponse || []
@@ -66,7 +80,6 @@ const Dashboard = () => {
       
       // Calculate revenue from completed appointments
       const completedAppointments = appointmentsData.filter(apt => apt.status === 'completed')
-      const now = new Date()
       const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
       
       // Calculate daily revenue (today only)
@@ -85,11 +98,8 @@ const Dashboard = () => {
         })
         .reduce((sum, apt) => sum + (parseFloat(apt.total_price) || 0), 0)
       
-      // Count today's appointments
-      const todayAppointments = appointmentsData.filter(apt => {
-        const aptDate = parseDateSafe(apt.appointment_date)
-        return aptDate && isSameDay(aptDate, now)
-      }).length
+      // Use already filtered appointments count
+      const todayAppointments = todaysAppointments.length
       
       // Calculate stats from real data
       const stats = {
@@ -103,23 +113,16 @@ const Dashboard = () => {
       
       setStats(stats)
       
-      // Filter appointments to only show today's appointments
-      const todaysAppointments = appointmentsData.filter(apt => {
-        const aptDate = parseDateSafe(apt.appointment_date)
-        return aptDate && isSameDay(aptDate, now)
-      })
-      
-      setRecentAppointments(todaysAppointments)
+      // Appointments already set above for faster rendering
       
       console.log('Dashboard data loaded successfully:', {
         totalAppointments: appointmentsData.length,
         todayAppointments: todaysAppointments.length,
-        appointmentsByStatus: groupAppointmentsByStatus(todaysAppointments),
         stats
       })
     } catch (error) {
       console.error('Error loading dashboard data:', error)
-      // Set fallback data in case of error
+      // Set fallback data on error
       setStats({
         totalClients: 0,
         totalTeamMembers: 0,
@@ -205,7 +208,7 @@ const Dashboard = () => {
         <div className="stat-card revenue-stat">
           <div className="stat-icon">💰</div>
           <div className="stat-content">
-            <h3>R$ {stats.dailyRevenue.toFixed(2)}</h3>
+            <h3>R$ {typeof stats.dailyRevenue === 'number' ? stats.dailyRevenue.toFixed(2) : '0.00'}</h3>
             <p>Receita Diária</p>
             <span className="revenue-trend">Hoje, {new Date().toLocaleDateString('pt-BR')}</span>
           </div>
@@ -214,7 +217,7 @@ const Dashboard = () => {
         <div className="stat-card revenue-stat">
           <div className="stat-icon">💵</div>
           <div className="stat-content">
-            <h3>R$ {stats.monthlyRevenue.toFixed(2)}</h3>
+            <h3>R$ {typeof stats.monthlyRevenue === 'number' ? stats.monthlyRevenue.toFixed(2) : '0.00'}</h3>
             <p>Receita Mensal</p>
             <span className="revenue-trend">Últimos 30 dias</span>
           </div>
