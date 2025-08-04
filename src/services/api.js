@@ -3,6 +3,15 @@ import axios from 'axios';
 // Base URL for your Django backend
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
+// Debug API configuration in production
+if (process.env.NODE_ENV === 'production') {
+  console.log('🔧 Production API Config:', {
+    API_BASE_URL,
+    NODE_ENV: process.env.NODE_ENV,
+    REACT_APP_API_BASE_URL: process.env.REACT_APP_API_BASE_URL
+  });
+}
+
 // Create axios instance with default configuration
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -58,8 +67,29 @@ export const apiService = {
 
   // Generic GET request
   get: async (endpoint) => {
-    const response = await api.get(endpoint);
-    return response.data;
+    try {
+      const response = await api.get(endpoint);
+      
+      // Debug API responses in production
+      if (process.env.NODE_ENV === 'production') {
+        console.log(`🌐 API GET ${endpoint}:`, {
+          status: response.status,
+          dataType: typeof response.data,
+          isArray: Array.isArray(response.data),
+          dataKeys: response.data && typeof response.data === 'object' ? Object.keys(response.data) : 'N/A',
+          dataLength: Array.isArray(response.data) ? response.data.length : 'N/A'
+        });
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error(`❌ API GET ${endpoint} failed:`, error.message);
+      // Return empty array for list endpoints to prevent filter errors
+      if (endpoint.includes('/api/')) {
+        return [];
+      }
+      throw error;
+    }
   },
 
   // Generic POST request

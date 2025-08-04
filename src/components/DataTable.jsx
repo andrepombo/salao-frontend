@@ -45,7 +45,9 @@ const DataTable = ({
 
   // Apply filters to data
   const applyFilters = (data) => {
-    return data.filter(item => {
+    // Ensure data is an array
+    const dataArray = Array.isArray(data) ? data : []
+    return dataArray.filter(item => {
       // Check if item passes all active filters
       return filters.every(filter => {
         const filterValue = activeFilters[filter.key]
@@ -70,7 +72,20 @@ const DataTable = ({
   }
 
   // Filter data based on search term and active filters
-  const filteredData = data.filter(item => {
+  // Ensure data is an array before filtering
+  const dataArray = Array.isArray(data) ? data : []
+  
+  // Production debugging for DataTable data
+  if (process.env.NODE_ENV === 'production' && !Array.isArray(data)) {
+    console.error('🚨 DataTable received non-array data:', {
+      title,
+      dataType: typeof data,
+      data: data,
+      convertedToArray: dataArray.length
+    });
+  }
+  
+  const filteredData = dataArray.filter(item => {
     // First apply custom filters
     const passesCustomFilters = filters.every(filter => {
       const filterValue = activeFilters[filter.key]

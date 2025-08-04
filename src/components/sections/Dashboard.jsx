@@ -45,13 +45,38 @@ const Dashboard = () => {
       // Don't block initial render with loading state
       // setIsLoading(true) - removed to prevent blocking
       
+      // Production debugging
+      if (process.env.NODE_ENV === 'production') {
+        console.log('🏭 Dashboard loading in production mode');
+      }
+      
       // Prioritize appointments data first (most critical for LCP)
       const appointmentsResponse = await apiService.get('/api/appointments/')
+      
+      // Production debugging for API response
+      if (process.env.NODE_ENV === 'production') {
+        console.log('🏭 Dashboard appointments response:', {
+          type: typeof appointmentsResponse,
+          isArray: Array.isArray(appointmentsResponse),
+          hasResults: appointmentsResponse && 'results' in appointmentsResponse,
+          keys: appointmentsResponse && typeof appointmentsResponse === 'object' ? Object.keys(appointmentsResponse) : 'N/A'
+        });
+      }
+      
       const appointmentsData = appointmentsResponse?.results || appointmentsResponse || []
       
       // Ensure appointmentsData is an array
       const appointmentsArray = Array.isArray(appointmentsData) ? appointmentsData : []
       console.log('Appointments data:', appointmentsArray)
+      
+      // Production debugging for final array
+      if (process.env.NODE_ENV === 'production') {
+        console.log('🏭 Dashboard final appointments array:', {
+          isArray: Array.isArray(appointmentsArray),
+          length: appointmentsArray.length,
+          firstItem: appointmentsArray[0] || 'empty'
+        });
+      }
       
       // Process appointments immediately for faster display
       const now = new Date()
