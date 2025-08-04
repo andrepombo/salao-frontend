@@ -49,9 +49,13 @@ const Dashboard = () => {
       const appointmentsResponse = await apiService.get('/api/appointments/')
       const appointmentsData = appointmentsResponse?.results || appointmentsResponse || []
       
+      // Ensure appointmentsData is an array
+      const appointmentsArray = Array.isArray(appointmentsData) ? appointmentsData : []
+      console.log('Appointments data:', appointmentsArray)
+      
       // Process appointments immediately for faster display
       const now = new Date()
-      const todaysAppointments = appointmentsData.filter(apt => {
+      const todaysAppointments = appointmentsArray.filter(apt => {
         const aptDate = parseDateSafe(apt.appointment_date)
         return aptDate && isSameDay(aptDate, now)
       })
@@ -79,7 +83,7 @@ const Dashboard = () => {
       })
       
       // Calculate revenue from completed appointments
-      const completedAppointments = appointmentsData.filter(apt => apt.status === 'completed')
+      const completedAppointments = appointmentsArray.filter(apt => apt.status === 'completed')
       const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
       
       // Calculate daily revenue (today only)
@@ -122,7 +126,8 @@ const Dashboard = () => {
       })
     } catch (error) {
       console.error('Error loading dashboard data:', error)
-      // Set fallback data on error
+      // Ensure we have fallback data on error
+      setRecentAppointments([])
       setStats({
         totalClients: 0,
         totalTeamMembers: 0,
@@ -168,7 +173,10 @@ const Dashboard = () => {
   }
 
   const groupAppointmentsByStatus = (appointments) => {
-    const grouped = appointments.reduce((acc, appointment) => {
+    // Ensure appointments is an array
+    const appointmentsArray = Array.isArray(appointments) ? appointments : []
+    
+    const grouped = appointmentsArray.reduce((acc, appointment) => {
       const status = appointment.status
       if (!acc[status]) {
         acc[status] = []
