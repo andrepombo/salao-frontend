@@ -1,5 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './DataTable.css'
+import { TextField } from '@mui/material'
+import { DatePicker } from '@mui/x-date-pickers/DatePicker'
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
+import { ptBR } from 'date-fns/locale'
 
 const DataTable = ({ 
   title, 
@@ -9,14 +14,112 @@ const DataTable = ({
   onEdit, 
   onDelete, 
   isLoading = false,
-  emptyMessage = "Nenhum dado disponível"
+  emptyMessage = "Nenhum dado disponível",
+  filters = [],
+  onFilterChange = null
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [sortColumn, setSortColumn] = useState('')
   const [sortDirection, setSortDirection] = useState('asc')
+  const [activeFilters, setActiveFilters] = useState({})
 
-  // Filter data based on search term
+  // Initialize filters when component mounts or filters prop changes
+  useEffect(() => {
+    const initialFilters = {}
+    filters.forEach(filter => {
+      initialFilters[filter.key] = filter.defaultValue || ''
+    })
+    setActiveFilters(initialFilters)
+  }, [filters])
+
+  // Handle filter changes
+  const handleFilterChange = (key, value) => {
+    const newFilters = { ...activeFilters, [key]: value }
+    setActiveFilters(newFilters)
+    
+    // Call parent component's filter handler if provided
+    if (onFilterChange) {
+      onFilterChange(newFilters)
+    }
+  }
+
+  // Apply filters to data
+  const applyFilters = (data) => {
+    return data.filter(item => {
+      // Check if item passes all active filters
+      return filters.every(filter => {
+        const filterValue = activeFilters[filter.key]
+        if (!filterValue || filterValue === '') return true
+        
+        const itemValue = item[filter.key]
+        if (itemValue === null || itemValue === undefined) return false
+        
+        switch (filter.type) {
+          case 'date':
+            // For date filters, compare YYYY-MM-DD format
+            return itemValue.startsWith(filterValue)
+          case 'select':
+            // For select filters, exact match
+            return itemValue === filterValue
+          default:
+            // Default string contains
+            return itemValue.toString().toLowerCase().includes(filterValue.toLowerCase())
+        }
+      })
+    })
+  }
+
+  // Filter data based on search term and active filters
   const filteredData = data.filter(item => {
+    // First apply custom filters
+    const passesCustomFilters = filters.every(filter => {
+      const filterValue = activeFilters[filter.key]
+      if (!filterValue || filterValue === '') return true
+      
+      const itemValue = item[filter.key]
+      if (itemValue === null || itemValue === undefined) return false
+      
+      switch (filter.type) {
+        case 'dateRange':
+          // For date range filters
+          if (!filterValue) return true
+          
+          const startDate = filterValue.start ? new Date(filterValue.start) : null
+          const endDate = filterValue.end ? new Date(filterValue.end) : null
+          const itemDate = new Date(itemValue)
+          
+          // If we have both start and end dates, check if item is in range
+          if (startDate && endDate) {
+            // Set end date to end of day for inclusive comparison
+            endDate.setHours(23, 59, 59, 999)
+            return itemDate >= startDate && itemDate <= endDate
+          }
+          // If we only have start date, check if item is after or on start date
+          else if (startDate) {
+            return itemDate >= startDate
+          }
+          // If we only have end date, check if item is before or on end date
+          else if (endDate) {
+            // Set end date to end of day for inclusive comparison
+            endDate.setHours(23, 59, 59, 999)
+            return itemDate <= endDate
+          }
+          return true
+        case 'date':
+          // For date filters, compare YYYY-MM-DD format
+          return itemValue.startsWith(filterValue)
+        case 'select':
+          // For select filters, exact match
+          return itemValue === filterValue
+        default:
+          // Default string contains
+          return itemValue.toString().toLowerCase().includes(filterValue.toLowerCase())
+      }
+    })
+    
+    if (!passesCustomFilters) return false
+    
+    // Then apply search term filter
     if (!searchTerm) return true
     
     return columns.some(column => {
@@ -117,6 +220,109 @@ const DataTable = ({
           </button>
         </div>
       </div>
+      
+      {/* Filters section */}
+      {filters.length > 0 && (
+        <div className="data-table-filters">
+          {filters.map(filter => (
+            <div key={filter.key} className="filter-item">
+              {filter.label && <label htmlFor={`filter-${filter.key}`}>{filter.label}:</label>}
+              {filter.type === 'select' ? (
+                <select
+                  id={`filter-${filter.key}`}
+                  value={activeFilters[filter.key] || ''}
+                  onChange={(e) => handleFilterChange(filter.key, e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="">Todos</option>
+                  {filter.options.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              ) : filter.type === 'dateRange' ? (
+                <div className="date-range-container">
+                  <div className="date-range-field mui-date-field">
+                    <span className="mui-date-label">De:</span>
+                    <DatePicker
+                      value={(activeFilters[filter.key] && activeFilters[filter.key].start) ? 
+                        new Date(activeFilters[filter.key].start) : null}
+                      onChange={(date) => {
+                        const currentValue = activeFilters[filter.key] || {}
+                        const dateStr = date ? date.toISOString().split('T')[0] : ''
+                        handleFilterChange(filter.key, { ...currentValue, start: dateStr })
+                      }}
+                      slotProps={{ 
+                        textField: { 
+                          size: "small",
+                          variant: "outlined",
+                          InputProps: {
+                            className: "mui-date-input"
+                          }
+                        } 
+                      }}
+                    />
+                  </div>
+                  <div className="date-range-field mui-date-field">
+                    <span className="mui-date-label">Até:</span>
+                    <DatePicker
+                      value={(activeFilters[filter.key] && activeFilters[filter.key].end) ? 
+                        new Date(activeFilters[filter.key].end) : null}
+                      onChange={(date) => {
+                        const currentValue = activeFilters[filter.key] || {}
+                        const dateStr = date ? date.toISOString().split('T')[0] : ''
+                        handleFilterChange(filter.key, { ...currentValue, end: dateStr })
+                      }}
+                      slotProps={{ 
+                        textField: { 
+                          size: "small",
+                          variant: "outlined",
+                          InputProps: {
+                            className: "mui-date-input"
+                          }
+                        } 
+                      }}
+                    />
+                  </div>
+                </div>
+              ) : filter.type === 'date' ? (
+                <input
+                  id={`filter-${filter.key}`}
+                  type="date"
+                  value={activeFilters[filter.key] || ''}
+                  onChange={(e) => handleFilterChange(filter.key, e.target.value)}
+                  className="filter-date"
+                />
+              ) : (
+                <input
+                  id={`filter-${filter.key}`}
+                  type="text"
+                  value={activeFilters[filter.key] || ''}
+                  onChange={(e) => handleFilterChange(filter.key, e.target.value)}
+                  placeholder={filter.placeholder || `Filtrar por ${filter.label}`}
+                  className="filter-input"
+                />
+              )}
+            </div>
+          ))}
+          {Object.values(activeFilters).some(val => val && val !== '') && (
+            <button 
+              className="btn btn-sm btn-outline-secondary"
+              onClick={() => {
+                const resetFilters = {}
+                filters.forEach(filter => {
+                  resetFilters[filter.key] = ''
+                })
+                setActiveFilters(resetFilters)
+                if (onFilterChange) onFilterChange(resetFilters)
+              }}
+            >
+              Limpar Filtros
+            </button>
+          )}
+        </div>
+      )}
 
       {isLoading ? (
         <div className="loading-state">

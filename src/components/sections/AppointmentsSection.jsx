@@ -471,6 +471,37 @@ const AppointmentsSection = () => {
     setSelectedTeamMember(null) // Reset selected team member
   }
 
+  // Define filters for the DataTable
+  const tableFilters = [
+    {
+      key: 'appointment_date',
+      type: 'dateRange',
+      placeholder: 'Filtrar por período'
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      type: 'select',
+      options: [
+        { value: 'scheduled', label: 'Agendado' },
+        { value: 'confirmed', label: 'Confirmado' },
+        { value: 'in_progress', label: 'Em Andamento' },
+        { value: 'completed', label: 'Concluído' },
+        { value: 'cancelled', label: 'Cancelado' },
+        { value: 'no_show', label: 'Não Compareceu' },
+        { value: 'rescheduled', label: 'Reagendado' },
+        { value: 'pending_payment', label: 'Pagamento Pendente' },
+        { value: 'waiting', label: 'Em Espera' }
+      ]
+    }
+  ]
+
+  // Handle filter changes
+  const handleFilterChange = (filters) => {
+    console.log('Filters changed:', filters)
+    // You can add additional logic here if needed
+  }
+
   return (
     <div>
       <DataTable
@@ -482,6 +513,8 @@ const AppointmentsSection = () => {
         onDelete={handleDelete}
         isLoading={isLoading}
         emptyMessage="Nenhum agendamento encontrado. Crie seu primeiro agendamento para começar!"
+        filters={tableFilters}
+        onFilterChange={handleFilterChange}
       />
 
       {showForm && (
