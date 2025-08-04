@@ -31,7 +31,7 @@ A modern React frontend application built with Vite for the Salão beauty salon 
 
 ```bash
 # Clone the repository (if not already done)
-git clone <repository-url>
+git clone https://github.com/andrepombo/salao-frontend.git
 cd salao-frontend
 
 # Install dependencies
@@ -100,40 +100,6 @@ The application includes a centralized API service (`/src/services/api.js`) that
 - **Error Handling**: Automatic error handling and token refresh
 - **Request/Response Interceptors**: For adding auth headers and handling common errors
 
-### Available Methods
-
-```javascript
-import { apiService } from './services/api';
-
-// Test backend connection
-apiService.testConnection();
-
-// Generic HTTP methods
-apiService.get('/api/endpoint');
-apiService.post('/api/endpoint', data);
-apiService.put('/api/endpoint', data);
-apiService.delete('/api/endpoint');
-```
-
-## 🎨 Styling
-
-The application features a modern design with:
-
-- **Gradient Backgrounds**: Beautiful purple-blue gradients
-- **Glass Morphism**: Backdrop blur effects for modern UI elements
-- **Responsive Design**: Mobile-first approach with breakpoints
-- **Animations**: Smooth transitions and pulse animations
-- **Status Indicators**: Color-coded connection status
-
-## 🔍 Testing Backend Connection
-
-The application automatically tests the backend connection on startup and provides:
-
-- **Visual Status Indicator**: Color-coded connection status
-- **Error Messages**: Detailed error information with troubleshooting tips
-- **Manual Testing**: "Test Connection" button for manual verification
-- **Backend Response Display**: Shows actual response data from the backend
-
 ## 🚨 Troubleshooting
 
 ### Common Issues
@@ -170,23 +136,3 @@ npm run preview
 npm run lint
 ```
 
-## 📝 Next Steps
-
-- Add authentication components (login/register)
-- Implement salon booking interface
-- Add client management features
-- Create service catalog
-- Implement team member profiles
-- Add appointment scheduling
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License.

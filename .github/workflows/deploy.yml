@@ -1,0 +1,92 @@
+name: Deploy Frontend to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Create .env file
+      run: |
+        echo "REACT_APP_API_BASE_URL=${{ secrets.REACT_APP_API_BASE_URL }}" > .env
+        echo "REACT_APP_ENV=${{ secrets.REACT_APP_ENV }}" >> .env
+
+    - name: Access EC2 and install Docker and Docker Compose if necessary
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_SSH_USER }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          # Check if Docker is installed
+          if ! command -v docker &> /dev/null
+          then
+            echo "Docker not found. Installing..."
+            sudo apt-get update
+            sudo apt-get install -y docker.io
+            sudo systemctl start docker
+            sudo systemctl enable docker
+            sudo usermod -aG docker ${{ secrets.EC2_SSH_USER }}
+            echo "Docker installed successfully."
+          else
+            echo "Docker is already installed. Skipping installation."
+          fi
+
+          # Check if Docker Compose is installed
+          if ! command -v docker-compose &> /dev/null
+          then
+            echo "Docker Compose not found. Installing..."
+            sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+            sudo chmod +x /usr/local/bin/docker-compose
+            echo "Docker Compose installed successfully."
+          else
+            echo "Docker Compose is already installed. Skipping installation."
+          fi
+
+          # Create necessary directories
+          mkdir -p /home/${{ secrets.EC2_SSH_USER }}/salao-frontend
+
+    - name: Copy files with SSH
+      uses: easingthemes/ssh-deploy@main
+      with:
+        SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+        ARGS: "-rlgoDzvc -i"
+        SOURCE: "./"
+        REMOTE_HOST: ${{ secrets.EC2_HOST }}
+        REMOTE_USER: ${{ secrets.EC2_SSH_USER }}
+        TARGET: '/home/${{ secrets.EC2_SSH_USER }}/salao-frontend'
+        EXCLUDE: "/dist/, /node_modules/, /.git/, /coverage/, /.vscode/, /.idea/"
+        SCRIPT_AFTER: |
+          # Build and start the frontend services
+          cd /home/${{ secrets.EC2_SSH_USER }}/salao-frontend
+
+          echo "Cleaning up unused Docker resources..."
+          sudo docker system prune --volumes -f
+
+          echo "Stopping existing containers..."
+          sudo docker-compose down || true
+
+          echo "Building and starting frontend containers..."
+          sudo docker-compose up -d --build
+
+          echo "Waiting for containers to start..."
+          sleep 10
+
+          # Health check
+          echo "Performing health check..."
+          if curl -f http://ec2-3-129-43-148.us-east-2.compute.amazonaws.com:80 > /dev/null 2>&1; then
+            echo "✅ Frontend deployment successful! Application is responding."
+          else
+            echo "❌ Health check failed. Checking container logs..."
+            sudo docker-compose logs
+            exit 1
+          fi
+
+          echo "🚀 Frontend deployment completed successfully!"
