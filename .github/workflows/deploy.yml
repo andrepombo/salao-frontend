@@ -15,8 +15,11 @@ jobs:
 
     - name: Create .env file
       run: |
-        echo "REACT_APP_API_BASE_URL=${{ secrets.REACT_APP_API_BASE_URL }}" > .env
-        echo "REACT_APP_ENV=${{ secrets.REACT_APP_ENV }}" >> .env
+        # Set API URL to point to backend service (port 8443 where nginx proxy runs)
+        echo "REACT_APP_API_BASE_URL=http://ec2-3-131-171-43.us-east-2.compute.amazonaws.com:8000/" > .env
+        echo "REACT_APP_ENV=production" >> .env
+        echo "Created .env file with:"
+        cat .env
 
     - name: Copy files with SSH
       uses: easingthemes/ssh-deploy@main
