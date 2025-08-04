@@ -1,8 +1,7 @@
 import axios from 'axios';
 
 // Base URL for your Django backend
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
-
+const API_BASE_URL = "http://ec2-3-131-171-43.us-east-2.compute.amazonaws.com:8000"
 // Debug API configuration in production
 if (process.env.NODE_ENV === 'production') {
   console.log('🔧 Production API Config:', {

@@ -13,13 +13,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Create .env file
+    - name: Verify deployment files
       run: |
-        # Set API URL to point to backend service (port 8443 where nginx proxy runs)
-        echo "REACT_APP_API_BASE_URL=http://ec2-3-131-171-43.us-east-2.compute.amazonaws.com:8000/" > .env
-        echo "REACT_APP_ENV=production" >> .env
-        echo "Created .env file with:"
-        cat .env
+        echo "Files to be deployed:"
+        ls -la
+        echo "Docker compose file:"
+        cat docker-compose.yml
 
     - name: Copy files with SSH
       uses: easingthemes/ssh-deploy@main
@@ -41,8 +40,8 @@ jobs:
           # echo "Stopping existing containers..."
           # sudo docker-compose down || true
 
-          echo "Building and starting frontend containers..."
-          sudo docker-compose up -d --build
+          echo "Building and starting frontend containers with API URL..."
+          sudo REACT_APP_API_BASE_URL=http://ec2-3-131-171-43.us-east-2.compute.amazonaws.com:8000 docker-compose up -d --build
 
           echo "Waiting for containers to start..."
           sleep 10
