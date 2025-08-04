@@ -8,7 +8,7 @@ const Dashboard = () => {
     totalTeamMembers: 0,
     totalServices: 0,
     todayAppointments: 0,
-    weeklyRevenue: 0,
+    dailyRevenue: 0,
     monthlyRevenue: 0
   })
   
@@ -18,6 +18,26 @@ const Dashboard = () => {
   useEffect(() => {
     loadDashboardData()
   }, [])
+
+  // Function to safely parse date strings without timezone issues
+  const parseDateSafe = (dateString) => {
+    if (!dateString) return null
+    const parts = dateString.split('-')
+    if (parts.length === 3) {
+      const year = parseInt(parts[0])
+      const month = parseInt(parts[1]) - 1 // Month is 0-indexed
+      const day = parseInt(parts[2])
+      return new Date(year, month, day)
+    }
+    return new Date(dateString)
+  }
+
+  // Function to check if two dates are the same day (ignoring time)
+  const isSameDay = (date1, date2) => {
+    return date1.getFullYear() === date2.getFullYear() &&
+           date1.getMonth() === date2.getMonth() &&
+           date1.getDate() === date2.getDate()
+  }
 
   const loadDashboardData = async () => {
     try {
@@ -47,33 +67,54 @@ const Dashboard = () => {
       // Calculate revenue from completed appointments
       const completedAppointments = appointmentsData.filter(apt => apt.status === 'completed')
       const now = new Date()
-      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
       const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
       
-      const weeklyRevenue = completedAppointments
-        .filter(apt => new Date(apt.appointment_date) >= weekAgo)
+      // Calculate daily revenue (today only)
+      const dailyRevenue = completedAppointments
+        .filter(apt => {
+          const aptDate = parseDateSafe(apt.appointment_date)
+          return aptDate && isSameDay(aptDate, now)
+        })
         .reduce((sum, apt) => sum + (parseFloat(apt.total_price) || 0), 0)
       
+      // Calculate monthly revenue
       const monthlyRevenue = completedAppointments
-        .filter(apt => new Date(apt.appointment_date) >= monthAgo)
+        .filter(apt => {
+          const aptDate = parseDateSafe(apt.appointment_date)
+          return aptDate && aptDate >= monthAgo
+        })
         .reduce((sum, apt) => sum + (parseFloat(apt.total_price) || 0), 0)
+      
+      // Count today's appointments
+      const todayAppointments = appointmentsData.filter(apt => {
+        const aptDate = parseDateSafe(apt.appointment_date)
+        return aptDate && isSameDay(aptDate, now)
+      }).length
       
       // Calculate stats from real data
       const stats = {
         totalClients: clientsData.length,
         totalTeamMembers: teamData.length,
         totalServices: servicesData.length,
-        todayAppointments: appointmentsData.length,
-        weeklyRevenue: weeklyRevenue,
+        todayAppointments: todayAppointments,
+        dailyRevenue: dailyRevenue,
         monthlyRevenue: monthlyRevenue
       }
       
       setStats(stats)
-      setRecentAppointments(appointmentsData)
+      
+      // Filter appointments to only show today's appointments
+      const todaysAppointments = appointmentsData.filter(apt => {
+        const aptDate = parseDateSafe(apt.appointment_date)
+        return aptDate && isSameDay(aptDate, now)
+      })
+      
+      setRecentAppointments(todaysAppointments)
       
       console.log('Dashboard data loaded successfully:', {
         totalAppointments: appointmentsData.length,
-        appointmentsByStatus: groupAppointmentsByStatus(appointmentsData),
+        todayAppointments: todaysAppointments.length,
+        appointmentsByStatus: groupAppointmentsByStatus(todaysAppointments),
         stats
       })
     } catch (error) {
@@ -84,7 +125,7 @@ const Dashboard = () => {
         totalTeamMembers: 0,
         totalServices: 0,
         todayAppointments: 0,
-        weeklyRevenue: 0,
+        dailyRevenue: 0,
         monthlyRevenue: 0
       })
       setRecentAppointments([])
@@ -164,9 +205,9 @@ const Dashboard = () => {
         <div className="stat-card revenue-stat">
           <div className="stat-icon">💰</div>
           <div className="stat-content">
-            <h3>R$ {stats.weeklyRevenue.toFixed(2)}</h3>
-            <p>Receita Semanal</p>
-            <span className="revenue-trend">+12% da semana passada</span>
+            <h3>R$ {stats.dailyRevenue.toFixed(2)}</h3>
+            <p>Receita Diária</p>
+            <span className="revenue-trend">Hoje, {new Date().toLocaleDateString('pt-BR')}</span>
           </div>
         </div>
         
@@ -175,7 +216,7 @@ const Dashboard = () => {
           <div className="stat-content">
             <h3>R$ {stats.monthlyRevenue.toFixed(2)}</h3>
             <p>Receita Mensal</p>
-            <span className="revenue-trend">+8% do mês passado</span>
+            <span className="revenue-trend">Últimos 30 dias</span>
           </div>
         </div>
         
