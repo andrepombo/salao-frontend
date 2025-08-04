@@ -32,6 +32,12 @@ import {
   Edit as EditIcon,
   Add as AddIcon
 } from '@mui/icons-material'
+import { DatePicker } from '@mui/x-date-pickers/DatePicker'
+import { TimePicker } from '@mui/x-date-pickers/TimePicker'
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
+import dayjs from 'dayjs'
+import 'dayjs/locale/pt-br'
 
 // Transition component for smooth dialog animation
 const Transition = React.forwardRef(function Transition(props, ref) {
@@ -346,30 +352,49 @@ const MuiCrudForm = ({
       
       case 'date':
         return (
-          <TextField
-            key={field.name}
-            label={field.label}
-            type="date"
-            value={formData[field.name] || ''}
-            onChange={(e) => handleChange(field.name, e.target.value)}
-            required={field.required}
-            InputLabelProps={{ shrink: true }}
-            {...commonProps}
-          />
+          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
+            <DatePicker
+              key={field.name}
+              label={field.label}
+              value={formData[field.name] ? dayjs(formData[field.name]) : null}
+              onChange={(newValue) => {
+                handleChange(field.name, newValue ? newValue.format('YYYY-MM-DD') : '')
+              }}
+              slotProps={{
+                textField: {
+                  ...commonProps,
+                  required: field.required,
+                  error: !!errors[field.name],
+                  helperText: errors[field.name] || field.helpText
+                }
+              }}
+              format="DD/MM/YYYY"
+            />
+          </LocalizationProvider>
         )
       
       case 'time':
         return (
-          <TextField
-            key={field.name}
-            label={field.label}
-            type="time"
-            value={formData[field.name] || ''}
-            onChange={(e) => handleChange(field.name, e.target.value)}
-            required={field.required}
-            InputLabelProps={{ shrink: true }}
-            {...commonProps}
-          />
+          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
+            <TimePicker
+              key={field.name}
+              label={field.label}
+              value={formData[field.name] ? dayjs(`2000-01-01T${formData[field.name]}`) : null}
+              onChange={(newValue) => {
+                handleChange(field.name, newValue ? newValue.format('HH:mm:ss') : '')
+              }}
+              slotProps={{
+                textField: {
+                  ...commonProps,
+                  required: field.required,
+                  error: !!errors[field.name],
+                  helperText: errors[field.name] || field.helpText
+                }
+              }}
+              format="HH:mm"
+              ampm={false}
+            />
+          </LocalizationProvider>
         )
       
       case 'number':
