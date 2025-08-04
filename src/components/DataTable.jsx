@@ -49,6 +49,24 @@ const DataTable = ({
     }
   }
 
+  // Function to safely format dates without timezone conversion issues
+  const formatDateSafe = (dateString) => {
+    if (!dateString) return '-'
+    
+    // Parse date string as local date to avoid timezone conversion
+    const parts = dateString.split('-')
+    if (parts.length === 3) {
+      const year = parseInt(parts[0])
+      const month = parseInt(parts[1]) - 1 // Month is 0-indexed
+      const day = parseInt(parts[2])
+      const localDate = new Date(year, month, day)
+      return localDate.toLocaleDateString('pt-BR')
+    }
+    
+    // Fallback for other date formats
+    return new Date(dateString).toLocaleDateString('pt-BR')
+  }
+
   const renderCellValue = (value, column) => {
     if (value === null || value === undefined) return '-'
     
@@ -56,11 +74,11 @@ const DataTable = ({
       case 'custom':
         return column.render ? column.render(value) : value.toString()
       case 'date':
-        return new Date(value).toLocaleDateString()
+        return formatDateSafe(value)
       case 'time':
         return new Date(`1970-01-01T${value}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       case 'currency':
-        return `$${parseFloat(value).toFixed(2)}`
+        return `R$ ${parseFloat(value).toFixed(2)}`
       case 'boolean':
         return value ? '✅' : '❌'
       case 'badge':
