@@ -494,15 +494,24 @@ onChange: async (value) => {
         // Create new appointment in backend
         try {
           console.log('Sending appointment data to backend:', appointmentData)
-          const newAppointment = await apiService.post('/api/appointments/', appointmentData)
+          const response = await apiService.post('/api/appointments/', appointmentData)
           // Backend returns the appointment, but we need to add display names for frontend
+          const newAppointment = response.data || response
+          
+          // Calculate total price from services
+          const totalPrice = (newAppointment.services || []).reduce((sum, serviceId) => {
+            const service = services.find(s => s.id === serviceId)
+            return sum + (service ? parseFloat(service.price || 0) : 0)
+          }, 0)
+          
           const newWithNames = {
             ...newAppointment,
             client_id: appointmentDataWithNames.client_id,
             team_member_id: appointmentDataWithNames.team_member_id,
             client_name: appointmentDataWithNames.client_name,
             team_member_name: appointmentDataWithNames.team_member_name,
-            services_list: appointmentDataWithNames.services_list
+            services_list: appointmentDataWithNames.services_list,
+            total_price: totalPrice
           }
           setAppointments(prev => [...prev, newWithNames])
           alert('Agendamento criado com sucesso!')
