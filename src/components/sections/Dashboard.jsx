@@ -232,11 +232,6 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard">
-      <div className="dashboard-header">
-        <h1>Painel</h1>
-        <p>Bem-vindo ao seu sistema de gerenciamento de salão</p>
-      </div>
-
       <div className="stats-grid">
         <div className="stat-card revenue-stat">
           <div className="stat-icon">💰</div>

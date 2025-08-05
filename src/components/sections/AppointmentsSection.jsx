@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import DataTable from '../DataTable'
 import MuiCrudForm from '../MuiCrudForm'
 import { apiService } from '../../services/api'
+import { Alert } from '@mui/material'
 
 const AppointmentsSection = () => {
   const [appointments, setAppointments] = useState([])
@@ -13,6 +14,8 @@ const AppointmentsSection = () => {
   const [editingAppointment, setEditingAppointment] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedTeamMember, setSelectedTeamMember] = useState(null)
+  const [conflictError, setConflictError] = useState(null)
+  const [isCheckingConflict, setIsCheckingConflict] = useState(false)
 
   // Function to get available services for a selected team member
   const getAvailableServices = (teamMemberId) => {
@@ -126,7 +129,44 @@ const AppointmentsSection = () => {
       type: 'time',
       required: true,
       fullWidth: true,
-      helpText: 'Selecione o horário do agendamento'
+      helpText: conflictError ? conflictError : 'Selecione o horário do agendamento',
+      error: !!conflictError,
+onChange: async (value) => {
+        // We need to check if we have both a team member and date before checking conflicts
+        if (selectedTeamMember) {
+          setIsCheckingConflict(true);
+          setConflictError(null);
+          
+          // Format time to HH:MM format
+          const formattedTime = value.substring(0, 5);
+          
+          // Get the current form data for appointment_date
+          // We need to access it from the form fields since formData might not be updated yet
+          const dateField = document.querySelector('input[name="appointment_date"]');
+          const dateValue = dateField ? dateField.value : null;
+          
+          if (dateValue) {
+            // Check for conflicts
+            const appointmentId = editingAppointment?.id || null;
+            const { hasConflict, message, error } = await apiService.checkAppointmentConflicts(
+              dateValue,
+              selectedTeamMember,
+              formattedTime,
+              appointmentId
+            );
+            
+            if (hasConflict) {
+              setConflictError(message);
+            } else if (error) {
+              setConflictError(error);
+            } else {
+              setConflictError(null);
+            }
+          }
+          
+          setIsCheckingConflict(false);
+        }
+      }
     },
     {
       name: 'status',
@@ -332,6 +372,30 @@ const AppointmentsSection = () => {
     try {
       setIsSubmitting(true)
       
+      // Check for conflicts before submitting
+      if (selectedTeamMember && formData.appointment_date && formData.appointment_time) {
+        const formattedTime = formData.appointment_time.substring(0, 5);
+        const appointmentId = editingAppointment?.id || null;
+        
+        try {
+          const { hasConflict, message } = await apiService.checkAppointmentConflicts(
+            formData.appointment_date,
+            selectedTeamMember,
+            formattedTime,
+            appointmentId
+          );
+          
+          if (hasConflict) {
+            setConflictError(message);
+            setIsSubmitting(false);
+            return; // Prevent form submission if there's a conflict
+          }
+        } catch (error) {
+          console.error('Error checking conflicts:', error);
+          // Continue with submission even if conflict check fails
+        }
+      }
+      
       // Find client and team member names for display
       const client = clients.find(c => c.id === parseInt(formData.client_id))
       const teamMember = teamMembers.find(t => t.id === parseInt(formData.team_member_id))
@@ -469,6 +533,7 @@ const AppointmentsSection = () => {
     setShowForm(false)
     setEditingAppointment(null)
     setSelectedTeamMember(null) // Reset selected team member
+    setConflictError(null) // Reset conflict error
   }
 
   // Define filters for the DataTable
@@ -515,15 +580,37 @@ const AppointmentsSection = () => {
       />
 
       {showForm && (
-        <MuiCrudForm
-          title="Agendamento"
-          fields={formFields}
-          data={editingAppointment}
-          onSubmit={handleSubmit}
-          onCancel={handleCancel}
-          isEdit={!!editingAppointment}
-          isLoading={isSubmitting}
-        />
+        <>
+          <MuiCrudForm
+            title="Agendamento"
+            fields={formFields}
+            data={editingAppointment}
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
+            isEdit={!!editingAppointment}
+            isLoading={isSubmitting || isCheckingConflict}
+          />
+          {conflictError && (
+            <Alert 
+              severity="warning" 
+              sx={{ 
+                position: 'fixed',
+                bottom: '20px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 9999,
+                width: '80%',
+                maxWidth: '500px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                '& .MuiAlert-icon': {
+                  color: '#ff9800'
+                }
+              }}
+            >
+              {conflictError}
+            </Alert>
+          )}
+        </>
       )}
     </div>
   )
