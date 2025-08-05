@@ -299,7 +299,7 @@ onChange: async (value) => {
         setAppointments(processedAppointments)
         
         // Calculate and update statistics
-        const calculatedStats = calculateStats(processedAppointments)
+        const calculatedStats = calculateStats(filteredAppointments)
         setStats(calculatedStats)
         
       } catch (apiError) {
@@ -794,6 +794,9 @@ onChange: async (value) => {
     
     return true
   })
+  
+  // Calculate stats based on filtered appointments instead of all appointments
+  const filteredStats = useMemo(() => calculateStats(filteredAppointments), [filteredAppointments])
 
   return (
     <div className="appointments-section">
@@ -802,7 +805,7 @@ onChange: async (value) => {
         <div className="stat-card">
           <div className="stat-icon">📅</div>
           <div className="stat-content">
-            <h3>{stats.totalAppointments}</h3>
+            <h3>{filteredStats.totalAppointments}</h3>
             <p>Total de Agendamentos</p>
           </div>
         </div>
@@ -810,7 +813,7 @@ onChange: async (value) => {
         <div className="stat-card">
           <div className="stat-icon">📋</div>
           <div className="stat-content">
-            <h3>{stats.todayAppointments}</h3>
+            <h3>{filteredStats.todayAppointments}</h3>
             <p>Agendamentos de Hoje</p>
           </div>
         </div>
@@ -818,7 +821,7 @@ onChange: async (value) => {
         <div className="stat-card">
           <div className="stat-icon">✅</div>
           <div className="stat-content">
-            <h3>{stats.confirmedAppointments}</h3>
+            <h3>{filteredStats.confirmedAppointments}</h3>
             <p>Confirmados</p>
           </div>
         </div>
@@ -826,9 +829,9 @@ onChange: async (value) => {
         <div className="stat-card revenue-stat">
           <div className="stat-icon">💰</div>
           <div className="stat-content">
-            <h3>R$ {stats.totalRevenue.toFixed(2)}</h3>
+            <h3>R$ {filteredStats.totalRevenue.toFixed(2)}</h3>
             <p>Receita Total</p>
-            <span className="revenue-trend">Todos os agendamentos</span>
+          
           </div>
         </div>
       </div>
