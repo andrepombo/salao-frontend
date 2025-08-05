@@ -2,6 +2,7 @@ import axios from 'axios';
 
 // Base URL for your Django backend
 const API_BASE_URL = "http://ec2-3-131-171-43.us-east-2.compute.amazonaws.com:8000"
+// const API_BASE_URL = "http://localhost:8000"
 // Debug API configuration in production
 if (process.env.NODE_ENV === 'production') {
   console.log('🔧 Production API Config:', {
@@ -53,6 +54,48 @@ api.interceptors.response.use(
 
 // API service functions
 export const apiService = {
+  // Check for appointment conflicts
+  checkAppointmentConflicts: async (date, teamMemberId, time, appointmentId = null) => {
+    try {
+      // Get available slots for the given date and team member
+      const response = await api.get(`/api/appointments/available_slots/?date=${date}&team_member=${teamMemberId}`);
+      const { available_slots } = response.data;
+      
+      // If the time is not in available slots, it means there's a conflict
+      const isTimeAvailable = available_slots.includes(time);
+      
+      // If we're editing an existing appointment, we need to check if the conflict is with itself
+      if (!isTimeAvailable && appointmentId) {
+        // Get the conflicting appointment
+        const conflictingAppointments = await api.get(
+          `/api/appointments/?appointment_date=${date}&team_member=${teamMemberId}`
+        );
+        
+        // Check if the conflict is with the appointment being edited
+        const conflict = conflictingAppointments.data.results?.find(
+          app => app.appointment_time === time && app.id !== appointmentId
+        );
+        
+        // If there's no conflict with other appointments, it's available
+        if (!conflict) {
+          return { hasConflict: false };
+        }
+      }
+      
+      return { 
+        hasConflict: !isTimeAvailable,
+        message: !isTimeAvailable ? 
+          'Este profissional já possui um agendamento neste horário. Por favor, escolha outro horário.' : 
+          null
+      };
+    } catch (error) {
+      console.error('Error checking appointment conflicts:', error);
+      return { 
+        hasConflict: false, 
+        error: 'Não foi possível verificar conflitos de agendamento. Prossiga com cuidado.'
+      };
+    }
+  },
   // Test connection to backend
   testConnection: async () => {
     try {
