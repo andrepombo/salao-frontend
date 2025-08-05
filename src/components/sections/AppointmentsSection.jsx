@@ -65,6 +65,17 @@ const AppointmentsSection = () => {
       }
     },
     { key: 'total_price', label: 'Total', type: 'currency' },
+    { key: 'total_duration', label: 'Duração', 
+      render: (value) => {
+        if (!value) return '-';
+        const hours = Math.floor(value / 60);
+        const minutes = value % 60;
+        if (hours > 0) {
+          return `${hours}h${minutes > 0 ? ` ${minutes}min` : ''}`;
+        }
+        return `${minutes}min`;
+      }
+    },
     { key: 'services_list', label: 'Serviços' }
   ]
 
@@ -236,7 +247,24 @@ onChange: async (value) => {
           console.log(`📋 Appointment ${index + 1} ID:`, appointment.id)
         })
         
-        setAppointments(appointmentsData)
+        // Process appointments to add duration calculation
+        const processedAppointments = appointmentsData.map(appointment => {
+          // Calculate total duration from services
+          let totalDuration = appointment.total_duration;
+          if (!totalDuration && appointment.services) {
+            totalDuration = appointment.services.reduce((sum, serviceId) => {
+              const service = services.find(s => s.id === serviceId)
+              return sum + (service ? parseInt(service.duration_minutes || 0) : 0)
+            }, 0)
+          }
+          
+          return {
+            ...appointment,
+            total_duration: totalDuration
+          }
+        })
+        
+        setAppointments(processedAppointments)
       } catch (apiError) {
         console.error('AppointmentsSection - Failed to load appointments from backend:', apiError)
         setAppointments([])
@@ -498,11 +526,14 @@ onChange: async (value) => {
           // Backend returns the appointment, but we need to add display names for frontend
           const newAppointment = response.data || response
           
-          // Calculate total price from services
-          const totalPrice = (newAppointment.services || []).reduce((sum, serviceId) => {
+          // Calculate total price and duration from services
+          const { totalPrice, totalDuration } = (newAppointment.services || []).reduce((acc, serviceId) => {
             const service = services.find(s => s.id === serviceId)
-            return sum + (service ? parseFloat(service.price || 0) : 0)
-          }, 0)
+            return {
+              totalPrice: acc.totalPrice + (service ? parseFloat(service.price || 0) : 0),
+              totalDuration: acc.totalDuration + (service ? parseInt(service.duration_minutes || 0) : 0)
+            }
+          }, { totalPrice: 0, totalDuration: 0 })
           
           const newWithNames = {
             ...newAppointment,
@@ -511,16 +542,25 @@ onChange: async (value) => {
             client_name: appointmentDataWithNames.client_name,
             team_member_name: appointmentDataWithNames.team_member_name,
             services_list: appointmentDataWithNames.services_list,
-            total_price: totalPrice
+            total_price: totalPrice,
+            total_duration: totalDuration
           }
           setAppointments(prev => [...prev, newWithNames])
           alert('Agendamento criado com sucesso!')
         } catch (apiError) {
           console.warn('Failed to create appointment in backend, creating locally:', apiError)
+          
+          // Calculate duration for local mock data
+          const totalDuration = (appointmentData.services || []).reduce((sum, serviceId) => {
+            const service = services.find(s => s.id === serviceId)
+            return sum + (service ? parseInt(service.duration_minutes || 0) : 0)
+          }, 0)
+          
           const newAppointment = { 
             id: Date.now(), 
             ...appointmentDataWithNames, 
-            created_at: new Date().toISOString() 
+            created_at: new Date().toISOString(),
+            total_duration: totalDuration
           }
           setAppointments(prev => [...prev, newAppointment])
           alert('Agendamento criado localmente (backend indisponível)')
