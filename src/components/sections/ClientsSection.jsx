@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import DataTable from '../DataTable'
 import MuiCrudForm from '../MuiCrudForm'
 import { apiService } from '../../services/api'
+import { trackClient } from '../../services/analytics'
 
 const ClientsSection = () => {
   const [clients, setClients] = useState([])
@@ -136,6 +137,10 @@ const ClientsSection = () => {
       try {
         await apiService.delete(`/api/clients/${client.id}/`)
         setClients(prev => prev.filter(c => c.id !== client.id))
+        
+        // Track client deletion
+        trackClient('Deleted', client)
+        
         alert('Cliente excluído com sucesso!')
       } catch (error) {
         console.error('Error deleting client:', error)
@@ -169,11 +174,19 @@ const ClientsSection = () => {
         // Update existing client
         const updatedClient = await apiService.put(`/api/clients/${editingClient.id}/`, apiData)
         setClients(prev => prev.map(c => c.id === editingClient.id ? updatedClient : c))
+        
+        // Track client update
+        trackClient('Updated', updatedClient)
+        
         alert('Cliente atualizado com sucesso!')
       } else {
         // Create new client
         const newClient = await apiService.post('/api/clients/', apiData)
         setClients(prev => [...prev, newClient])
+        
+        // Track client creation
+        trackClient('Created', newClient)
+        
         alert('Cliente criado com sucesso!')
       }
       

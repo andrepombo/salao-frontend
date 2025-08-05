@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import DataTable from '../DataTable'
 import MuiCrudForm from '../MuiCrudForm'
 import { apiService } from '../../services/api'
+import { trackTeamMember } from '../../services/analytics'
 
 const TeamSection = () => {
   const [teamMembers, setTeamMembers] = useState([])
@@ -177,6 +178,10 @@ const TeamSection = () => {
       try {
         await apiService.delete(`/api/team/${member.id}/`)
         setTeamMembers(prev => prev.filter(m => m.id !== member.id))
+        
+        // Track team member deletion
+        trackTeamMember('Deleted', member)
+        
         alert('Profissional excluído com sucesso!')
       } catch (error) {
         console.error('Error deleting team member:', error)
@@ -208,11 +213,19 @@ const TeamSection = () => {
         // Update existing team member
         const updatedMember = await apiService.put(`/api/team/${editingMember.id}/`, apiData)
         setTeamMembers(prev => prev.map(m => m.id === editingMember.id ? updatedMember : m))
+        
+        // Track team member update
+        trackTeamMember('Updated', updatedMember)
+        
         alert('Profissional atualizado com sucesso!')
       } else {
         // Create new team member
         const newMember = await apiService.post('/api/team/', apiData)
         setTeamMembers(prev => [...prev, newMember])
+        
+        // Track team member creation
+        trackTeamMember('Created', newMember)
+        
         alert('Profissional criado com sucesso!')
       }
       

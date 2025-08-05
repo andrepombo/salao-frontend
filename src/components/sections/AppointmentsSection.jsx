@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import DataTable from '../DataTable'
 import MuiCrudForm from '../MuiCrudForm'
 import { apiService } from '../../services/api'
+import { trackAppointment, trackEvent } from '../../services/analytics'
 import { Alert, TextField, Select, MenuItem, FormControl, InputLabel } from '@mui/material'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
@@ -190,7 +191,7 @@ const AppointmentsSection = () => {
       fullWidth: true,
       helpText: conflictError ? conflictError : 'Selecione o horário do agendamento',
       error: !!conflictError,
-onChange: async (value) => {
+      onChange: async (value) => {
         // We need to check if we have both a team member and date before checking conflicts
         if (selectedTeamMember) {
           setIsCheckingConflict(true);
@@ -442,18 +443,20 @@ onChange: async (value) => {
   }
 
   const handleDelete = async (appointment) => {
-    if (window.confirm(`Tem certeza que deseja excluir este agendamento para ${appointment.client_name}?`)) {
+    if (window.confirm(`Tem certeza que deseja excluir o agendamento de ${appointment.client_name}?`)) {
       try {
-        // Try to delete from backend first
-        try {
-          await apiService.delete(`/api/appointments/${appointment.id}/`)
-          setAppointments(prev => prev.filter(a => a.id !== appointment.id))
-          alert('Agendamento excluído com sucesso!')
-        } catch (apiError) {
-          console.warn('Failed to delete appointment from backend, deleting locally:', apiError)
-          setAppointments(prev => prev.filter(a => a.id !== appointment.id))
-          alert('Agendamento excluído localmente (backend indisponível)')
-        }
+        await apiService.deleteAppointment(appointment.id)
+        
+        // Track appointment deletion
+        trackAppointment('Deleted', appointment)
+        
+        // Remove the deleted appointment from the list
+        setAppointments(appointments.filter(apt => apt.id !== appointment.id))
+        
+        // Update stats
+        setStats(calculateStats(appointments.filter(apt => apt.id !== appointment.id)))
+        
+        alert('Agendamento excluído com sucesso!')
       } catch (error) {
         console.error('Error deleting appointment:', error)
         alert('Erro ao excluir agendamento. Tente novamente.')
@@ -576,6 +579,13 @@ onChange: async (value) => {
             return updated
           })
           
+          // Track appointment update
+          trackAppointment('Updated', {
+            ...updatedAppointment,
+            client_name: clients.find(c => c.id === parseInt(formData.client_id))?.name || 'Unknown',
+            services_list: getSelectedServicesText(formData.services)
+          })
+          
           alert('Agendamento atualizado com sucesso!')
         } catch (apiError) {
           console.error('Failed to update appointment in backend:', apiError)
@@ -584,7 +594,7 @@ onChange: async (value) => {
           if (apiError.response && apiError.response.data) {
             const errorData = apiError.response.data;
             let errorMessage = 'Ocorreu um erro de validação.';
-
+            
             if (errorData.non_field_errors && errorData.non_field_errors.length > 0) {
               errorMessage = errorData.non_field_errors[0];
             } else if (Array.isArray(errorData) && errorData.length > 0) {
@@ -636,6 +646,14 @@ onChange: async (value) => {
             total_duration: totalDuration
           }
           setAppointments(prev => [...prev, newWithNames])
+          
+          // Track appointment creation
+          trackAppointment('Created', {
+            ...response,
+            client_name: clients.find(c => c.id === parseInt(formData.client_id))?.name || 'Unknown',
+            services_list: getSelectedServicesText(formData.services)
+          })
+          
           alert('Agendamento criado com sucesso!')
         } catch (apiError) {
           console.error('Failed to create appointment in backend:', apiError)
@@ -644,7 +662,7 @@ onChange: async (value) => {
           if (apiError.response && apiError.response.data) {
             const errorData = apiError.response.data;
             let errorMessage = 'Ocorreu um erro de validação.';
-
+            
             if (errorData.non_field_errors && errorData.non_field_errors.length > 0) {
               errorMessage = errorData.non_field_errors[0];
             } else if (Array.isArray(errorData) && errorData.length > 0) {
@@ -682,6 +700,20 @@ onChange: async (value) => {
         }
       }
       
+      // Track service selections
+      if (formData.services && formData.services.length > 0) {
+        // Track each selected service
+        const selectedServices = getAvailableServices(formData.team_member_id)
+          .filter(service => formData.services.includes(service.value))
+        
+        selectedServices.forEach(service => {
+          const serviceName = service.label.split(' - ')[0]
+          const priceStr = service.label.split('R$ ')[1]
+          const price = priceStr ? parseFloat(priceStr) : 0
+          trackEvent('Service', 'Selected', serviceName, price)
+        })
+      }
+      
       setShowForm(false)
       setEditingAppointment(null)
       setSelectedTeamMember(null) // Reset selected team member
@@ -696,8 +728,23 @@ onChange: async (value) => {
   const handleCancel = () => {
     setShowForm(false)
     setEditingAppointment(null)
-    setSelectedTeamMember(null) // Reset selected team member
-    setConflictError(null) // Reset conflict error
+    setConflictError(null)
+    
+    // Track form cancellation
+    trackEvent('Appointment', 'FormCancelled')
+  }
+  
+  // Helper function to get text representation of selected services
+  const getSelectedServicesText = (serviceIds) => {
+    if (!serviceIds || !services) return ''
+    
+    return serviceIds
+      .map(id => {
+        const service = services.find(s => s.id === parseInt(id))
+        return service ? service.name : ''
+      })
+      .filter(name => name)
+      .join(', ')
   }
 
   // Define filters for the DataTable
