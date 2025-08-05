@@ -2,7 +2,11 @@ import { useState, useEffect, useMemo } from 'react'
 import DataTable from '../DataTable'
 import MuiCrudForm from '../MuiCrudForm'
 import { apiService } from '../../services/api'
-import { Alert } from '@mui/material'
+import { Alert, TextField, Select, MenuItem, FormControl, InputLabel } from '@mui/material'
+import { DatePicker } from '@mui/x-date-pickers/DatePicker'
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
+import { ptBR } from 'date-fns/locale'
 import './AppointmentsSection.css'
 
 const AppointmentsSection = () => {
@@ -23,6 +27,7 @@ const AppointmentsSection = () => {
     confirmedAppointments: 0,
     totalRevenue: 0
   })
+  const [activeFilters, setActiveFilters] = useState({})
 
   // Function to get available services for a selected team member
   const getAvailableServices = (teamMemberId) => {
@@ -701,11 +706,94 @@ onChange: async (value) => {
     }
   ]
 
+  // Initialize filters when component mounts
+  useEffect(() => {
+    const initialFilters = {
+      appointment_date: { start: '', end: '' },
+      status: ''
+    }
+    setActiveFilters(initialFilters)
+  }, [])
+
   // Handle filter changes
-  const handleFilterChange = (filters) => {
-    console.log('Filters changed:', filters)
-    // You can add additional logic here if needed
+  const handleFilterChange = (key, value) => {
+    const newFilters = { ...activeFilters, [key]: value }
+    setActiveFilters(newFilters)
+    console.log('Filters changed:', newFilters)
   }
+
+  // Apply filters to appointments data
+  const filteredAppointments = appointments.filter(appointment => {
+    // Date range filter (matching original DataTable logic)
+    if (activeFilters.appointment_date) {
+      const filterValue = activeFilters.appointment_date
+      if (filterValue.start || filterValue.end) {
+        const itemValue = appointment.appointment_date
+        if (!itemValue) return false
+        
+        // Parse date strings as local dates to avoid timezone issues
+        let startDate = null
+        let endDate = null
+        let itemDate = null
+        
+        // Parse start date if exists
+        if (filterValue.start) {
+          const startParts = filterValue.start.split('-')
+          if (startParts.length === 3) {
+            startDate = new Date(parseInt(startParts[0]), parseInt(startParts[1]) - 1, parseInt(startParts[2]))
+          }
+        }
+        
+        // Parse end date if exists
+        if (filterValue.end) {
+          const endParts = filterValue.end.split('-')
+          if (endParts.length === 3) {
+            endDate = new Date(parseInt(endParts[0]), parseInt(endParts[1]) - 1, parseInt(endParts[2]))
+          }
+        }
+        
+        // Parse item date
+        const itemParts = itemValue.split('-')
+        if (itemParts.length === 3) {
+          itemDate = new Date(parseInt(itemParts[0]), parseInt(itemParts[1]) - 1, parseInt(itemParts[2]))
+        } else {
+          itemDate = new Date(itemValue)
+        }
+        
+        // If we have both start and end dates, check if item is in range
+        if (startDate && endDate) {
+          // Set end date to end of day for inclusive comparison
+          endDate.setHours(23, 59, 59, 999)
+          if (!(itemDate >= startDate && itemDate <= endDate)) {
+            return false
+          }
+        }
+        // If we only have start date, check if item is after or on start date
+        else if (startDate) {
+          if (!(itemDate >= startDate)) {
+            return false
+          }
+        }
+        // If we only have end date, check if item is before or on end date
+        else if (endDate) {
+          // Set end date to end of day for inclusive comparison
+          endDate.setHours(23, 59, 59, 999)
+          if (!(itemDate <= endDate)) {
+            return false
+          }
+        }
+      }
+    }
+    
+    // Status filter
+    if (activeFilters.status && activeFilters.status !== '') {
+      if (appointment.status !== activeFilters.status) {
+        return false
+      }
+    }
+    
+    return true
+  })
 
   return (
     <div className="appointments-section">
@@ -745,17 +833,159 @@ onChange: async (value) => {
         </div>
       </div>
 
+      {/* Filters Section */}
+      <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ptBR}>
+        {tableFilters.length > 0 && (
+          <div className="data-table-filters">
+            {tableFilters.map(filter => (
+              <div key={filter.key} className="filter-item">
+                {filter.label && <label htmlFor={`filter-${filter.key}`}>{filter.label}:</label>}
+                {filter.type === 'select' ? (
+                  <FormControl size="small" className="mui-select-container">
+                    <Select
+                      id={`filter-${filter.key}`}
+                      value={activeFilters[filter.key] || ''}
+                      onChange={(e) => handleFilterChange(filter.key, e.target.value)}
+                      className="mui-select"
+                      displayEmpty
+                    >
+                      <MenuItem value="">Todos</MenuItem>
+                      {filter.options.map(option => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                ) : filter.type === 'dateRange' ? (
+                  <div className="date-range-container">
+                    <div className="date-range-field mui-date-field">
+                      <span className="mui-date-label">De:</span>
+                      <DatePicker
+                        value={(activeFilters[filter.key] && activeFilters[filter.key].start) ? 
+                          (() => {
+                            const parts = activeFilters[filter.key].start.split('-')
+                            if (parts.length === 3) {
+                              return new Date(
+                                parseInt(parts[0]), 
+                                parseInt(parts[1]) - 1, 
+                                parseInt(parts[2])
+                              )
+                            }
+                            return null
+                          })() : null}
+                        onChange={(date) => {
+                          const currentValue = activeFilters[filter.key] || {}
+                          let dateStr = ''
+                          if (date) {
+                            const year = date.getFullYear()
+                            const month = String(date.getMonth() + 1).padStart(2, '0')
+                            const day = String(date.getDate()).padStart(2, '0')
+                            dateStr = `${year}-${month}-${day}`
+                          }
+                          handleFilterChange(filter.key, { ...currentValue, start: dateStr })
+                        }}
+                        slotProps={{ 
+                          textField: { 
+                            size: "small",
+                            variant: "outlined",
+                            InputProps: {
+                              className: "mui-date-input"
+                            }
+                          } 
+                        }}
+                      />
+                    </div>
+                    <div className="date-range-field mui-date-field">
+                      <span className="mui-date-label">Até:</span>
+                      <DatePicker
+                        value={(activeFilters[filter.key] && activeFilters[filter.key].end) ? 
+                          (() => {
+                            const parts = activeFilters[filter.key].end.split('-')
+                            if (parts.length === 3) {
+                              return new Date(
+                                parseInt(parts[0]), 
+                                parseInt(parts[1]) - 1, 
+                                parseInt(parts[2])
+                              )
+                            }
+                            return null
+                          })() : null}
+                        onChange={(date) => {
+                          const currentValue = activeFilters[filter.key] || {}
+                          let dateStr = ''
+                          if (date) {
+                            const year = date.getFullYear()
+                            const month = String(date.getMonth() + 1).padStart(2, '0')
+                            const day = String(date.getDate()).padStart(2, '0')
+                            dateStr = `${year}-${month}-${day}`
+                          }
+                          handleFilterChange(filter.key, { ...currentValue, end: dateStr })
+                        }}
+                        slotProps={{ 
+                          textField: { 
+                            size: "small",
+                            variant: "outlined",
+                            InputProps: {
+                              className: "mui-date-input"
+                            }
+                          } 
+                        }}
+                      />
+                    </div>
+                  </div>
+                ) : filter.type === 'date' ? (
+                  <input
+                    id={`filter-${filter.key}`}
+                    type="date"
+                    value={activeFilters[filter.key] || ''}
+                    onChange={(e) => handleFilterChange(filter.key, e.target.value)}
+                    className="filter-date"
+                  />
+                ) : (
+                  <input
+                    id={`filter-${filter.key}`}
+                    type="text"
+                    value={activeFilters[filter.key] || ''}
+                    onChange={(e) => handleFilterChange(filter.key, e.target.value)}
+                    placeholder={filter.placeholder || `Filtrar por ${filter.label}`}
+                    className="filter-input"
+                  />
+                )}
+              </div>
+            ))}
+            {(Object.entries(activeFilters).some(([key, val]) => {
+              if (key === 'appointment_date') {
+                return val && (val.start || val.end)
+              }
+              return val && val !== ''
+            })) && (
+              <button 
+                className="btn-clear-filters"
+                onClick={() => {
+                  const resetFilters = {
+                    appointment_date: { start: '', end: '' },
+                    status: ''
+                  }
+                  setActiveFilters(resetFilters)
+                }}
+              >
+                Limpar Filtros
+              </button>
+            )}
+          </div>
+        )}
+      </LocalizationProvider>
+
       <DataTable
         title="Agendamentos"
         columns={columns}
-        data={appointments}
+        data={filteredAppointments}
         onAdd={handleAdd}
         onEdit={handleEdit}
         onDelete={handleDelete}
         isLoading={isLoading}
         emptyMessage="Nenhum agendamento encontrado. Crie seu primeiro agendamento para começar!"
-        filters={tableFilters}
-        onFilterChange={handleFilterChange}
       />
 
       {showForm && (
