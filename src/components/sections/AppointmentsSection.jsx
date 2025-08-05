@@ -63,16 +63,32 @@ const AppointmentsSection = () => {
     const todayStr = today.toISOString().split('T')[0]
     
     const totalAppointments = appointmentsData.length
-    const todayAppointments = appointmentsData.filter(apt => apt.appointment_date === todayStr).length
-    const confirmedAppointments = appointmentsData.filter(apt => apt.status === 'confirmed').length
+    
+    // Count unique clients
+    const uniqueClientIds = new Set()
+    appointmentsData.forEach(apt => {
+      // Check for client property which could be an ID or name
+      if (apt.client) {
+        uniqueClientIds.add(apt.client)
+      } else if (apt.client_id) {
+        uniqueClientIds.add(apt.client_id)
+      } else if (apt.client_name) {
+        uniqueClientIds.add(apt.client_name)
+      }
+    })
+    const uniqueClientsCount = uniqueClientIds.size
+    
+    // Count completed appointments
+    const completedAppointments = appointmentsData.filter(apt => apt.status === 'completed').length
+    
     const totalRevenue = appointmentsData.reduce((sum, apt) => {
       return sum + (parseFloat(apt.total_price) || 0)
     }, 0)
     
     return {
       totalAppointments,
-      todayAppointments,
-      confirmedAppointments,
+      uniqueClientsCount,
+      completedAppointments,
       totalRevenue
     }
   }
@@ -307,8 +323,8 @@ onChange: async (value) => {
         setAppointments([])
         setStats({
           totalAppointments: 0,
-          todayAppointments: 0,
-          confirmedAppointments: 0,
+          uniqueClientsCount: 0,
+          completedAppointments: 0,
           totalRevenue: 0
         })
       }
@@ -811,18 +827,18 @@ onChange: async (value) => {
         </div>
         
         <div className="stat-card">
-          <div className="stat-icon">📋</div>
+          <div className="stat-icon">👤</div>
           <div className="stat-content">
-            <h3>{filteredStats.todayAppointments}</h3>
-            <p>Agendamentos de Hoje</p>
+            <h3>{filteredStats.uniqueClientsCount}</h3>
+            <p>Clientes</p>
           </div>
         </div>
         
         <div className="stat-card">
           <div className="stat-icon">✅</div>
           <div className="stat-content">
-            <h3>{filteredStats.confirmedAppointments}</h3>
-            <p>Confirmados</p>
+            <h3>{filteredStats.completedAppointments}</h3>
+            <p>Concluídos</p>
           </div>
         </div>
         
