@@ -379,32 +379,54 @@ const MuiCrudForm = ({
         )
       
       case 'time':
+        // Generate time options from 07:00 to 20:00 in 30-minute intervals
+        const timeOptions = []
+        for (let hour = 7; hour <= 20; hour++) {
+          for (let minute = 0; minute < 60; minute += 30) {
+            const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00`
+            const displayTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
+            timeOptions.push({ value: timeString, label: displayTime })
+          }
+        }
+        
         return (
-          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
-            <TimePicker
-              key={field.name}
-              label={field.label}
-              value={formData[field.name] ? dayjs(`2000-01-01T${formData[field.name]}`) : null}
-              onChange={(newValue) => {
-                handleChange(field.name, newValue ? newValue.format('HH:mm:ss') : '')
+          <FormControl 
+            {...commonProps}
+            required={field.required}
+            disabled={field.disabled || isLoading}
+            sx={{
+              width: '150px',
+              minWidth: '150px',
+              maxWidth: '150px'
+            }}
+          >
+            <InputLabel>{field.label}</InputLabel>
+            <Select
+              value={formData[field.name] || ''}
+              onChange={(e) => {
+                handleChange(field.name, e.target.value, field)
               }}
-              slotProps={{
-                textField: {
-                  ...commonProps,
-                  required: field.required,
-                  error: !!errors[field.name],
-                  helperText: errors[field.name] || field.helpText,
-                  sx: {
-                    width: '150px',
-                    minWidth: '150px',
-                    maxWidth: '150px'
+              label={field.label}
+              MenuProps={{
+                PaperProps: {
+                  style: {
+                    maxHeight: 300
                   }
                 }
               }}
-              format="HH:mm"
-              ampm={false}
-            />
-          </LocalizationProvider>
+            >
+              {timeOptions.map(option => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </Select>
+            {(errors[field.name] || field.helpText) && (
+              <FormHelperText error={!!errors[field.name]}>
+                {errors[field.name] || field.helpText}
+              </FormHelperText>
+            )}
+          </FormControl>
         )
       
       case 'number':
