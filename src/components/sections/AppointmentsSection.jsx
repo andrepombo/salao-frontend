@@ -3,6 +3,7 @@ import DataTable from '../DataTable'
 import MuiCrudForm from '../MuiCrudForm'
 import { apiService } from '../../services/api'
 import { Alert } from '@mui/material'
+import './AppointmentsSection.css'
 
 const AppointmentsSection = () => {
   const [appointments, setAppointments] = useState([])
@@ -16,6 +17,12 @@ const AppointmentsSection = () => {
   const [selectedTeamMember, setSelectedTeamMember] = useState(null)
   const [conflictError, setConflictError] = useState(null)
   const [isCheckingConflict, setIsCheckingConflict] = useState(false)
+  const [stats, setStats] = useState({
+    totalAppointments: 0,
+    todayAppointments: 0,
+    confirmedAppointments: 0,
+    totalRevenue: 0
+  })
 
   // Function to get available services for a selected team member
   const getAvailableServices = (teamMemberId) => {
@@ -43,6 +50,26 @@ const AppointmentsSection = () => {
       'no_show': 'Não Compareceu'
     }
     return statusMap[statusKey] || statusKey
+  }
+
+  // Function to calculate appointment statistics
+  const calculateStats = (appointmentsData) => {
+    const today = new Date()
+    const todayStr = today.toISOString().split('T')[0]
+    
+    const totalAppointments = appointmentsData.length
+    const todayAppointments = appointmentsData.filter(apt => apt.appointment_date === todayStr).length
+    const confirmedAppointments = appointmentsData.filter(apt => apt.status === 'confirmed').length
+    const totalRevenue = appointmentsData.reduce((sum, apt) => {
+      return sum + (parseFloat(apt.total_price) || 0)
+    }, 0)
+    
+    return {
+      totalAppointments,
+      todayAppointments,
+      confirmedAppointments,
+      totalRevenue
+    }
   }
 
   const columns = [
@@ -265,13 +292,30 @@ onChange: async (value) => {
         })
         
         setAppointments(processedAppointments)
+        
+        // Calculate and update statistics
+        const calculatedStats = calculateStats(processedAppointments)
+        setStats(calculatedStats)
+        
       } catch (apiError) {
         console.error('AppointmentsSection - Failed to load appointments from backend:', apiError)
         setAppointments([])
+        setStats({
+          totalAppointments: 0,
+          todayAppointments: 0,
+          confirmedAppointments: 0,
+          totalRevenue: 0
+        })
       }
     } catch (error) {
       console.error('Error loading appointments:', error)
       setAppointments([])
+      setStats({
+        totalAppointments: 0,
+        todayAppointments: 0,
+        confirmedAppointments: 0,
+        totalRevenue: 0
+      })
     } finally {
       setIsLoading(false)
     }
@@ -664,7 +708,43 @@ onChange: async (value) => {
   }
 
   return (
-    <div>
+    <div className="appointments-section">
+      {/* Statistics Cards */}
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-icon">📅</div>
+          <div className="stat-content">
+            <h3>{stats.totalAppointments}</h3>
+            <p>Total de Agendamentos</p>
+          </div>
+        </div>
+        
+        <div className="stat-card">
+          <div className="stat-icon">📋</div>
+          <div className="stat-content">
+            <h3>{stats.todayAppointments}</h3>
+            <p>Agendamentos de Hoje</p>
+          </div>
+        </div>
+        
+        <div className="stat-card">
+          <div className="stat-icon">✅</div>
+          <div className="stat-content">
+            <h3>{stats.confirmedAppointments}</h3>
+            <p>Confirmados</p>
+          </div>
+        </div>
+        
+        <div className="stat-card revenue-stat">
+          <div className="stat-icon">💰</div>
+          <div className="stat-content">
+            <h3>R$ {stats.totalRevenue.toFixed(2)}</h3>
+            <p>Receita Total</p>
+            <span className="revenue-trend">Todos os agendamentos</span>
+          </div>
+        </div>
+      </div>
+
       <DataTable
         title="Agendamentos"
         columns={columns}
