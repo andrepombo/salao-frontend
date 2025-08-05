@@ -1,15 +1,18 @@
 import { useState } from 'react'
+import { NavLink, useLocation } from 'react-router-dom'
 import './Sidebar.css'
 
-const Sidebar = ({ activeSection, onSectionChange }) => {
+const Sidebar = ({ connectionStatus, onRetryConnection }) => {
   const [isCollapsed, setIsCollapsed] = useState(false)
 
+  const location = useLocation()
+  
   const sections = [
-    { id: 'dashboard', name: 'Painel', icon: '📊' },
-    { id: 'clients', name: 'Clientes', icon: '👥' },
-    { id: 'team', name: 'Equipe', icon: '💼' },
-    { id: 'services', name: 'Serviços', icon: '✂️' },
-    { id: 'appointments', name: 'Agendamentos', icon: '📅' },
+    { id: 'dashboard', path: '/dashboard', name: 'Painel', icon: '📊' },
+    { id: 'clients', path: '/clients', name: 'Clientes', icon: '👥' },
+    { id: 'team', path: '/team', name: 'Equipe', icon: '💼' },
+    { id: 'services', path: '/services', name: 'Serviços', icon: '✂️' },
+    { id: 'appointments', path: '/appointments', name: 'Agendamentos', icon: '📅' },
   ]
 
   return (
@@ -29,15 +32,15 @@ const Sidebar = ({ activeSection, onSectionChange }) => {
 
       <nav className="sidebar-nav">
         {sections.map(section => (
-          <button
+          <NavLink
             key={section.id}
-            className={`nav-item ${activeSection === section.id ? 'active' : ''}`}
-            onClick={() => onSectionChange(section.id)}
+            to={section.path}
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             title={isCollapsed ? section.name : ''}
           >
             <span className="nav-icon">{section.icon}</span>
             {!isCollapsed && <span className="nav-text">{section.name}</span>}
-          </button>
+          </NavLink>
         ))}
       </nav>
 

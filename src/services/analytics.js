@@ -15,11 +15,42 @@ export const initializeAnalytics = () => {
   gtag('config', 'G-H0X01F0GPW');
 };
 
-// Track page views
+// Track page views using real URLs from React Router
 export const trackPageView = (path) => {
   if (window.gtag) {
+    // Set page title based on path for better analytics reporting
+    let pageTitle = 'Salão - ';
+    
+    // Extract section name from path
+    const section = path.split('/').pop() || 'dashboard';
+    
+    // Set appropriate page title based on section
+    switch(section) {
+      case 'dashboard':
+        pageTitle += 'Dashboard';
+        break;
+      case 'clients':
+        pageTitle += 'Clientes';
+        break;
+      case 'team':
+        pageTitle += 'Equipe';
+        break;
+      case 'services':
+        pageTitle += 'Serviços';
+        break;
+      case 'appointments':
+        pageTitle += 'Agendamentos';
+        break;
+      default:
+        pageTitle += 'Home';
+    }
+    
+    console.log(`Analytics: Tracking real page view for: ${path} with title: ${pageTitle}`);
+    
+    // Send real pageview with actual URL path and title
     window.gtag('config', 'G-H0X01F0GPW', {
       page_path: path,
+      page_title: pageTitle
     });
   }
 };

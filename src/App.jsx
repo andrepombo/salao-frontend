@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { apiService } from './services/api'
 import { initializeAnalytics, trackPageView } from './services/analytics'
 import Sidebar from './components/Sidebar'
@@ -9,8 +10,22 @@ import ServicesSection from './components/sections/ServicesSection'
 import AppointmentsSection from './components/sections/AppointmentsSection'
 import './App.css'
 
+// Analytics tracker component
+function PageTracker() {
+  const location = useLocation();
+  
+  useEffect(() => {
+    // Track page view when location changes
+    const path = location.pathname || '/';
+    trackPageView(path);
+    console.log(`Analytics: Tracking page view for: ${path}`);
+  }, [location]);
+  
+  return null;
+}
+
+// Main App component
 function App() {
-  const [activeSection, setActiveSection] = useState('dashboard')
   const [connectionStatus, setConnectionStatus] = useState('testing')
   const [backendData, setBackendData] = useState(null)
   const [error, setError] = useState(null)
@@ -37,28 +52,6 @@ function App() {
     }
   }
 
-  const renderActiveSection = () => {
-    // Track page view when section changes
-    useEffect(() => {
-      trackPageView(`/${activeSection}`)
-    }, [activeSection])
-    
-    switch (activeSection) {
-      case 'dashboard':
-        return <Dashboard />
-      case 'clients':
-        return <ClientsSection />
-      case 'team':
-        return <TeamSection />
-      case 'services':
-        return <ServicesSection />
-      case 'appointments':
-        return <AppointmentsSection />
-      default:
-        return <Dashboard />
-    }
-  }
-
   const getStatusColor = () => {
     switch (connectionStatus) {
       case 'connected': return '#4ade80'
@@ -76,33 +69,43 @@ function App() {
   }
 
   return (
-    <div className="app">
-      <Sidebar 
-        activeSection={activeSection} 
-        onSectionChange={setActiveSection} 
-      />
-      
-      <main className="app-main">
-        <div className="app-content">
-          {renderActiveSection()}
-        </div>
-
-        {error && (
-          <div className="error-toast">
-            <div className="error-content">
-              <span className="error-icon">⚠️</span>
-              <span className="error-message">Backend connection failed</span>
-              <button 
-                className="error-close"
-                onClick={() => setError(null)}
-              >
-                ✕
-              </button>
-            </div>
+    <Router>
+      <div className="app">
+        <PageTracker />
+        <Sidebar 
+          connectionStatus={connectionStatus}
+          onRetryConnection={testBackendConnection}
+        />
+        <main className="app-main">
+          <div className="app-content">
+            <Routes>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/clients" element={<ClientsSection />} />
+              <Route path="/team" element={<TeamSection />} />
+              <Route path="/services" element={<ServicesSection />} />
+              <Route path="/appointments" element={<AppointmentsSection />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
           </div>
-        )}
-      </main>
-    </div>
+          
+          {error && (
+            <div className="error-toast">
+              <div className="error-content">
+                <span className="error-icon">⚠️</span>
+                <span className="error-message">Backend connection failed</span>
+                <button 
+                  className="error-close"
+                  onClick={() => setError(null)}
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
+    </Router>
   )
 }
 
