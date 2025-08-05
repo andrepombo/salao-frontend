@@ -513,10 +513,35 @@ onChange: async (value) => {
           
           alert('Agendamento atualizado com sucesso!')
         } catch (apiError) {
-          console.warn('Failed to update appointment in backend, updating locally:', apiError)
-          const updatedAppointment = { ...editingAppointment, ...appointmentDataWithNames }
-          setAppointments(prev => prev.map(a => a.id === editingAppointment.id ? updatedAppointment : a))
-          alert('Agendamento atualizado localmente (backend indisponível)')
+          console.error('Failed to update appointment in backend:', apiError)
+          
+          // Check if it's a validation error from the backend
+          if (apiError.response && apiError.response.data) {
+            const errorData = apiError.response.data;
+            let errorMessage = 'Ocorreu um erro de validação.';
+
+            if (errorData.non_field_errors && errorData.non_field_errors.length > 0) {
+              errorMessage = errorData.non_field_errors[0];
+            } else if (Array.isArray(errorData) && errorData.length > 0) {
+              errorMessage = errorData[0];
+            } else if (typeof errorData === 'object' && Object.keys(errorData).length > 0) {
+              const firstKey = Object.keys(errorData)[0];
+              const errorValue = Array.isArray(errorData[firstKey]) ? errorData[firstKey][0] : errorData[firstKey];
+              errorMessage = `${firstKey}: ${errorValue}`;
+            } else if (typeof errorData === 'string') {
+              errorMessage = errorData;
+            }
+            
+            setConflictError(errorMessage);
+            setIsSubmitting(false);
+            return; // Don't close the form on validation error
+          } else {
+            // Network or other error - fallback to local update
+            console.warn('Network error, updating locally:', apiError)
+            const updatedAppointment = { ...editingAppointment, ...appointmentDataWithNames }
+            setAppointments(prev => prev.map(a => a.id === editingAppointment.id ? updatedAppointment : a))
+            alert('Agendamento atualizado localmente (backend indisponível)')
+          }
         }
       } else {
         // Create new appointment in backend
@@ -548,22 +573,47 @@ onChange: async (value) => {
           setAppointments(prev => [...prev, newWithNames])
           alert('Agendamento criado com sucesso!')
         } catch (apiError) {
-          console.warn('Failed to create appointment in backend, creating locally:', apiError)
+          console.error('Failed to create appointment in backend:', apiError)
           
-          // Calculate duration for local mock data
-          const totalDuration = (appointmentData.services || []).reduce((sum, serviceId) => {
-            const service = services.find(s => s.id === serviceId)
-            return sum + (service ? parseInt(service.duration_minutes || 0) : 0)
-          }, 0)
-          
-          const newAppointment = { 
-            id: Date.now(), 
-            ...appointmentDataWithNames, 
-            created_at: new Date().toISOString(),
-            total_duration: totalDuration
+          // Check if it's a validation error from the backend
+          if (apiError.response && apiError.response.data) {
+            const errorData = apiError.response.data;
+            let errorMessage = 'Ocorreu um erro de validação.';
+
+            if (errorData.non_field_errors && errorData.non_field_errors.length > 0) {
+              errorMessage = errorData.non_field_errors[0];
+            } else if (Array.isArray(errorData) && errorData.length > 0) {
+              errorMessage = errorData[0];
+            } else if (typeof errorData === 'object' && Object.keys(errorData).length > 0) {
+              const firstKey = Object.keys(errorData)[0];
+              const errorValue = Array.isArray(errorData[firstKey]) ? errorData[firstKey][0] : errorData[firstKey];
+              errorMessage = `${firstKey}: ${errorValue}`;
+            } else if (typeof errorData === 'string') {
+              errorMessage = errorData;
+            }
+            
+            setConflictError(errorMessage);
+            setIsSubmitting(false);
+            return; // Don't close the form on validation error
+          } else {
+            // Network or other error - fallback to local creation
+            console.warn('Network error, creating locally:', apiError)
+            
+            // Calculate duration for local mock data
+            const totalDuration = (appointmentData.services || []).reduce((sum, serviceId) => {
+              const service = services.find(s => s.id === serviceId)
+              return sum + (service ? parseInt(service.duration_minutes || 0) : 0)
+            }, 0)
+            
+            const newAppointment = { 
+              id: Date.now(), 
+              ...appointmentDataWithNames, 
+              created_at: new Date().toISOString(),
+              total_duration: totalDuration
+            }
+            setAppointments(prev => [...prev, newAppointment])
+            alert('Agendamento criado localmente (backend indisponível)')
           }
-          setAppointments(prev => [...prev, newAppointment])
-          alert('Agendamento criado localmente (backend indisponível)')
         }
       }
       
