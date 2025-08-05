@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { apiService } from './services/api'
+import { initializeAnalytics, trackPageView } from './services/analytics'
 import Sidebar from './components/Sidebar'
 import Dashboard from './components/sections/Dashboard'
 import ClientsSection from './components/sections/ClientsSection'
@@ -16,6 +17,8 @@ function App() {
 
   useEffect(() => {
     testBackendConnection()
+    // Initialize Google Analytics
+    initializeAnalytics()
   }, [])
 
   const testBackendConnection = async () => {
@@ -35,6 +38,11 @@ function App() {
   }
 
   const renderActiveSection = () => {
+    // Track page view when section changes
+    useEffect(() => {
+      trackPageView(`/${activeSection}`)
+    }, [activeSection])
+    
     switch (activeSection) {
       case 'dashboard':
         return <Dashboard />
