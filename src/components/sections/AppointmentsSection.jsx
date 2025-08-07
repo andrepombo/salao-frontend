@@ -15,7 +15,7 @@ const AppointmentsSection = () => {
   const [clients, setClients] = useState([])
   const [teamMembers, setTeamMembers] = useState([])
   const [services, setServices] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false) // Start with false to render UI immediately
   const [showForm, setShowForm] = useState(false)
   const [editingAppointment, setEditingAppointment] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -23,11 +23,11 @@ const AppointmentsSection = () => {
   const [conflictError, setConflictError] = useState(null)
   const [isCheckingConflict, setIsCheckingConflict] = useState(false)
   const [stats, setStats] = useState({
-    totalAppointments: 0,
-    todayAppointments: 0,
-    confirmedAppointments: 0,
-    totalRevenue: 0
-  })
+    totalAppointments: '...',
+    todayAppointments: '...',
+    confirmedAppointments: '...',
+    totalRevenue: '...'
+  }) // Use placeholder values for immediate rendering
   const [activeFilters, setActiveFilters] = useState({})
 
   // Function to get available services for a selected team member
@@ -253,15 +253,19 @@ const AppointmentsSection = () => {
   ], [clients, teamMembers, services, selectedTeamMember])
 
   useEffect(() => {
-    loadAppointments()
-    loadClients()
-    loadTeamMembers()
-    loadServices()
+    // Start data loading immediately but don't block rendering
+    Promise.all([
+      loadAppointments(),
+      loadClients(),
+      loadTeamMembers(),
+      loadServices()
+    ])
   }, [])
 
   const loadAppointments = async () => {
     try {
-      setIsLoading(true)
+      // Don't block UI rendering with loading state
+      // setIsLoading(true)
       
       // Try to fetch real data from backend first
       try {
@@ -361,7 +365,17 @@ const AppointmentsSection = () => {
       const response = await apiService.get('/api/team/')
       console.log('Loaded team members from backend:', response)
       // Handle paginated response from Django REST framework
-      const teamData = response.results || response || []
+      // Ensure teamData is always an array
+      let teamData = [];
+      if (Array.isArray(response)) {
+        teamData = response;
+      } else if (response && Array.isArray(response.results)) {
+        teamData = response.results;
+      } else if (response && typeof response === 'object') {
+        // If it's an object but not with results array, check if it has results property
+        teamData = Array.isArray(response.results) ? response.results : [];
+      }
+      
       // Ensure we have the specialties data for filtering services
       const processedTeamData = teamData.map(member => ({
         ...member,
@@ -860,6 +874,17 @@ const AppointmentsSection = () => {
     });
   }, [appointments, activeFilters])
   
+  // Skeleton component for stat cards
+  const StatCardSkeleton = () => (
+    <div className="stat-card skeleton-card">
+      <div className="stat-icon skeleton"></div>
+      <div className="stat-content">
+        <div className="skeleton-text skeleton"></div>
+        <div className="skeleton-text skeleton-small"></div>
+      </div>
+    </div>
+  )
+
   // Calculate stats based on filtered appointments instead of all appointments
   const filteredStats = useMemo(() => calculateStats(filteredAppointments), [filteredAppointments])
 
@@ -867,38 +892,48 @@ const AppointmentsSection = () => {
     <div className="appointments-section">
       {/* Statistics Cards */}
       <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon">📅</div>
-          <div className="stat-content">
-            <h3>{filteredStats.totalAppointments}</h3>
-            <p>Total de Agendamentos</p>
-          </div>
-        </div>
-        
-        <div className="stat-card">
-          <div className="stat-icon">👤</div>
-          <div className="stat-content">
-            <h3>{filteredStats.uniqueClientsCount}</h3>
-            <p>Clientes</p>
-          </div>
-        </div>
-        
-        <div className="stat-card">
-          <div className="stat-icon">✅</div>
-          <div className="stat-content">
-            <h3>{filteredStats.completedAppointments}</h3>
-            <p>Concluídos</p>
-          </div>
-        </div>
-        
-        <div className="stat-card revenue-stat">
-          <div className="stat-icon">💰</div>
-          <div className="stat-content">
-            <h3>R$ {filteredStats.totalRevenue.toFixed(2)}</h3>
-            <p>Receita Total</p>
-          
-          </div>
-        </div>
+        {isLoading || appointments.length === 0 ? (
+          <>
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+          </>
+        ) : (
+          <>
+            <div className="stat-card">
+              <div className="stat-icon">📅</div>
+              <div className="stat-content">
+                <h3>{filteredStats.totalAppointments}</h3>
+                <p>Total de Agendamentos</p>
+              </div>
+            </div>
+            
+            <div className="stat-card">
+              <div className="stat-icon">👤</div>
+              <div className="stat-content">
+                <h3>{filteredStats.uniqueClientsCount}</h3>
+                <p>Clientes</p>
+              </div>
+            </div>
+            
+            <div className="stat-card">
+              <div className="stat-icon">✅</div>
+              <div className="stat-content">
+                <h3>{filteredStats.completedAppointments}</h3>
+                <p>Concluídos</p>
+              </div>
+            </div>
+            
+            <div className="stat-card revenue-stat">
+              <div className="stat-icon">💰</div>
+              <div className="stat-content">
+                <h3>R$ {typeof filteredStats.totalRevenue === 'number' ? filteredStats.totalRevenue.toFixed(2) : filteredStats.totalRevenue}</h3>
+                <p>Receita Total</p>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Filters Section */}

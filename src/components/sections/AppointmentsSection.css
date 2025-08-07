@@ -16,32 +16,34 @@
   background: white;
   border-radius: 12px;
   padding: 1rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03); /* Lighter shadow */
   display: flex;
   align-items: center;
   gap: 1rem;
-  transition: transform 0.2s ease;
+  transition: transform 0.15s ease; /* Faster transition */
   will-change: transform;
   transform: translateZ(0);
+  contain: layout paint; /* Improve rendering performance */
 }
 
 .stat-card:hover {
   transform: translateY(-1px) translateZ(0);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06); /* Lighter shadow on hover */
 }
 
 .stat-icon {
   font-size: 2.5rem;
-  background: #667eea;
+  background: #667eea; /* Removed gradient for better performance */
   border-radius: 12px;
   width: 60px;
   height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 1px 3px rgba(102, 126, 234, 0.15); /* Lighter shadow */
   will-change: transform;
-  transform: translateZ(0);
+  transform: translateZ(0); /* Hardware acceleration */
+  contain: layout paint; /* Improve rendering performance */
 }
 
 .stat-content h3 {
@@ -190,7 +192,7 @@
 
 /* Clear Filters Button - Modern design with bold font */
 .btn-clear-filters {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background: #ef4444; /* Solid color instead of gradient */
   border: none;
   color: white;
   padding: 0.5rem 1rem;
@@ -198,21 +200,21 @@
   font-size: 0.875rem;
   font-weight: 700; /* Bold font */
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease; /* Simpler, faster transition */
   display: inline-flex;
   align-items: center;
   justify-content: center;
   height: 40px; /* Match MUI input height */
   min-width: 130px;
-  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.15); /* Lighter shadow */
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .btn-clear-filters:hover {
-  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  background: #dc2626; /* Solid color instead of gradient */
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.2); /* Lighter shadow */
 }
 
 .btn-clear-filters:active {
@@ -222,7 +224,36 @@
 
 .btn-clear-filters:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.3), 0 4px 12px rgba(220, 38, 38, 0.2);
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2); /* Simpler focus shadow */
+}
+
+/* Skeleton loading animations */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 4px;
+}
+
+.skeleton-card {
+  opacity: 0.7;
+}
+
+.skeleton-text {
+  height: 24px;
+  width: 100%;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.skeleton-text.skeleton-small {
+  height: 16px;
+  width: 60%;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 /* Responsive design */
