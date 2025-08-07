@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import './DataTable.css'
 import { TextField, Select, MenuItem, FormControl, InputLabel } from '@mui/material'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
@@ -24,12 +24,20 @@ const DataTable = ({
   const [activeFilters, setActiveFilters] = useState({})
 
   // Initialize filters when component mounts or filters prop changes
+  // Helper: deep compare two objects
+  function deepEqual(obj1, obj2) {
+    return JSON.stringify(obj1) === JSON.stringify(obj2)
+  }
+
   useEffect(() => {
     const initialFilters = {}
     filters.forEach(filter => {
       initialFilters[filter.key] = filter.defaultValue || ''
     })
-    setActiveFilters(initialFilters)
+    // Only update if different
+    if (!deepEqual(activeFilters, initialFilters)) {
+      setActiveFilters(initialFilters)
+    }
   }, [filters])
 
   // Handle filter changes
@@ -71,30 +79,36 @@ const DataTable = ({
     })
   }
 
-  // Filter data based on search term and active filters
-  // Ensure data is an array before filtering
-  const dataArray = Array.isArray(data) ? data : []
+  // Use useMemo to prevent unnecessary recalculations on every render
+  const dataArray = useMemo(() => {
+    // Ensure data is an array before filtering
+    const arr = Array.isArray(data) ? data : []
+    
+    // Production debugging for DataTable data
+    if (process.env.NODE_ENV === 'production' && !Array.isArray(data)) {
+      console.error('🚨 DataTable received non-array data:', {
+        title,
+        dataType: typeof data,
+        data: data,
+        convertedToArray: arr.length
+      });
+    }
+    
+    return arr;
+  }, [data, title]);
   
-  // Production debugging for DataTable data
-  if (process.env.NODE_ENV === 'production' && !Array.isArray(data)) {
-    console.error('🚨 DataTable received non-array data:', {
-      title,
-      dataType: typeof data,
-      data: data,
-      convertedToArray: dataArray.length
-    });
-  }
-  
-  const filteredData = dataArray.filter(item => {
-    // First apply custom filters
-    const passesCustomFilters = filters.every(filter => {
-      const filterValue = activeFilters[filter.key]
-      if (!filterValue || filterValue === '') return true
-      
-      const itemValue = item[filter.key]
-      if (itemValue === null || itemValue === undefined) return false
-      
-      switch (filter.type) {
+  // Use useMemo for filtered data to prevent recalculation on every render
+  const filteredData = useMemo(() => {
+    return dataArray.filter(item => {
+      // First apply custom filters
+      const passesCustomFilters = filters.every(filter => {
+        const filterValue = activeFilters[filter.key]
+        if (!filterValue || filterValue === '') return true
+        
+        const itemValue = item[filter.key]
+        if (itemValue === null || itemValue === undefined) return false
+        
+        switch (filter.type) {
         case 'dateRange':
           // For date range filters
           if (!filterValue) return true
@@ -167,10 +181,12 @@ const DataTable = ({
       if (value === null || value === undefined) return false
       return value.toString().toLowerCase().includes(searchTerm.toLowerCase())
     })
-  })
+  });
+  }, [dataArray, filters, activeFilters, searchTerm]);
 
-  // Sort data
-  const sortedData = [...filteredData].sort((a, b) => {
+  // Sort data with useMemo to prevent recalculation on every render
+  const sortedData = useMemo(() => {
+    return [...filteredData].sort((a, b) => {
     if (!sortColumn) return 0
     
     const aValue = a[sortColumn]
@@ -181,7 +197,8 @@ const DataTable = ({
     
     const comparison = aValue.toString().localeCompare(bValue.toString(), undefined, { numeric: true })
     return sortDirection === 'asc' ? comparison : -comparison
-  })
+  });
+  }, [filteredData, sortColumn, sortDirection])
 
   const handleSort = (columnKey) => {
     if (sortColumn === columnKey) {

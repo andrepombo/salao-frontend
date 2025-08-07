@@ -747,8 +747,8 @@ const AppointmentsSection = () => {
       .join(', ')
   }
 
-  // Define filters for the DataTable
-  const tableFilters = [
+  // Define filters for the DataTable - wrapped in useMemo to prevent recreation on every render
+  const tableFilters = useMemo(() => [
     {
       key: 'appointment_date',
       type: 'dateRange',
@@ -767,7 +767,7 @@ const AppointmentsSection = () => {
         { value: 'no_show', label: 'Não Compareceu' }
       ]
     }
-  ]
+  ], [])
 
   // Initialize filters when component mounts
   useEffect(() => {
@@ -785,78 +785,80 @@ const AppointmentsSection = () => {
     console.log('Filters changed:', newFilters)
   }
 
-  // Apply filters to appointments data
-  const filteredAppointments = appointments.filter(appointment => {
-    // Date range filter (matching original DataTable logic)
-    if (activeFilters.appointment_date) {
-      const filterValue = activeFilters.appointment_date
-      if (filterValue.start || filterValue.end) {
-        const itemValue = appointment.appointment_date
-        if (!itemValue) return false
-        
-        // Parse date strings as local dates to avoid timezone issues
-        let startDate = null
-        let endDate = null
-        let itemDate = null
-        
-        // Parse start date if exists
-        if (filterValue.start) {
-          const startParts = filterValue.start.split('-')
-          if (startParts.length === 3) {
-            startDate = new Date(parseInt(startParts[0]), parseInt(startParts[1]) - 1, parseInt(startParts[2]))
+  // Apply filters to appointments data - wrapped in useMemo to prevent infinite render loop
+  const filteredAppointments = useMemo(() => {
+    return appointments.filter(appointment => {
+      // Date range filter (matching original DataTable logic)
+      if (activeFilters.appointment_date) {
+        const filterValue = activeFilters.appointment_date
+        if (filterValue.start || filterValue.end) {
+          const itemValue = appointment.appointment_date
+          if (!itemValue) return false
+          
+          // Parse date strings as local dates to avoid timezone issues
+          let startDate = null
+          let endDate = null
+          let itemDate = null
+          
+          // Parse start date if exists
+          if (filterValue.start) {
+            const startParts = filterValue.start.split('-')
+            if (startParts.length === 3) {
+              startDate = new Date(parseInt(startParts[0]), parseInt(startParts[1]) - 1, parseInt(startParts[2]))
+            }
           }
-        }
-        
-        // Parse end date if exists
-        if (filterValue.end) {
-          const endParts = filterValue.end.split('-')
-          if (endParts.length === 3) {
-            endDate = new Date(parseInt(endParts[0]), parseInt(endParts[1]) - 1, parseInt(endParts[2]))
+          
+          // Parse end date if exists
+          if (filterValue.end) {
+            const endParts = filterValue.end.split('-')
+            if (endParts.length === 3) {
+              endDate = new Date(parseInt(endParts[0]), parseInt(endParts[1]) - 1, parseInt(endParts[2]))
+            }
           }
-        }
-        
-        // Parse item date
-        const itemParts = itemValue.split('-')
-        if (itemParts.length === 3) {
-          itemDate = new Date(parseInt(itemParts[0]), parseInt(itemParts[1]) - 1, parseInt(itemParts[2]))
-        } else {
-          itemDate = new Date(itemValue)
-        }
-        
-        // If we have both start and end dates, check if item is in range
-        if (startDate && endDate) {
-          // Set end date to end of day for inclusive comparison
-          endDate.setHours(23, 59, 59, 999)
-          if (!(itemDate >= startDate && itemDate <= endDate)) {
-            return false
+          
+          // Parse item date
+          const itemParts = itemValue.split('-')
+          if (itemParts.length === 3) {
+            itemDate = new Date(parseInt(itemParts[0]), parseInt(itemParts[1]) - 1, parseInt(itemParts[2]))
+          } else {
+            itemDate = new Date(itemValue)
           }
-        }
-        // If we only have start date, check if item is after or on start date
-        else if (startDate) {
-          if (!(itemDate >= startDate)) {
-            return false
+          
+          // If we have both start and end dates, check if item is in range
+          if (startDate && endDate) {
+            // Set end date to end of day for inclusive comparison
+            endDate.setHours(23, 59, 59, 999)
+            if (!(itemDate >= startDate && itemDate <= endDate)) {
+              return false
+            }
           }
-        }
-        // If we only have end date, check if item is before or on end date
-        else if (endDate) {
-          // Set end date to end of day for inclusive comparison
-          endDate.setHours(23, 59, 59, 999)
-          if (!(itemDate <= endDate)) {
-            return false
+          // If we only have start date, check if item is after or on start date
+          else if (startDate) {
+            if (!(itemDate >= startDate)) {
+              return false
+            }
+          }
+          // If we only have end date, check if item is before or on end date
+          else if (endDate) {
+            // Set end date to end of day for inclusive comparison
+            endDate.setHours(23, 59, 59, 999)
+            if (!(itemDate <= endDate)) {
+              return false
+            }
           }
         }
       }
-    }
-    
-    // Status filter
-    if (activeFilters.status && activeFilters.status !== '') {
-      if (appointment.status !== activeFilters.status) {
-        return false
+      
+      // Status filter
+      if (activeFilters.status && activeFilters.status !== '') {
+        if (appointment.status !== activeFilters.status) {
+          return false
+        }
       }
-    }
-    
-    return true
-  })
+      
+      return true
+    });
+  }, [appointments, activeFilters])
   
   // Calculate stats based on filtered appointments instead of all appointments
   const filteredStats = useMemo(() => calculateStats(filteredAppointments), [filteredAppointments])
