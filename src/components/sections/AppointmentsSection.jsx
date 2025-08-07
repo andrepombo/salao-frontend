@@ -15,7 +15,8 @@ const AppointmentsSection = () => {
   const [clients, setClients] = useState([])
   const [teamMembers, setTeamMembers] = useState([])
   const [services, setServices] = useState([])
-  const [isLoading, setIsLoading] = useState(false) // Start with false to render UI immediately
+  const [isLoading, setIsLoading] = useState(false) // For overall component loading
+  const [tableLoading, setTableLoading] = useState(true) // Separate state for table loading
   const [showForm, setShowForm] = useState(false)
   const [editingAppointment, setEditingAppointment] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -264,8 +265,9 @@ const AppointmentsSection = () => {
 
   const loadAppointments = async () => {
     try {
-      // Don't block UI rendering with loading state
-      // setIsLoading(true)
+      // Don't block UI rendering with loading state for the cards
+      // But do show loading indicator for the table
+      setTableLoading(true)
       
       // Try to fetch real data from backend first
       try {
@@ -343,6 +345,7 @@ const AppointmentsSection = () => {
         totalRevenue: 0
       })
     } finally {
+      setTableLoading(false)
       setIsLoading(false)
     }
   }
@@ -890,50 +893,75 @@ const AppointmentsSection = () => {
 
   return (
     <div className="appointments-section">
-      {/* Statistics Cards */}
+      {/* Statistics Cards - Always show icons to prevent blinking */}
       <div className="stats-grid">
-        {isLoading || appointments.length === 0 ? (
-          <>
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-          </>
-        ) : (
-          <>
-            <div className="stat-card">
-              <div className="stat-icon">📅</div>
-              <div className="stat-content">
+        <div className="stat-card">
+          <div className="stat-icon">📅</div>
+          <div className="stat-content">
+            {isLoading || appointments.length === 0 ? (
+              <>
+                <div className="skeleton-text skeleton"></div>
+                <div className="skeleton-text skeleton-small"></div>
+              </>
+            ) : (
+              <>
                 <h3>{filteredStats.totalAppointments}</h3>
                 <p>Total de Agendamentos</p>
-              </div>
-            </div>
-            
-            <div className="stat-card">
-              <div className="stat-icon">👤</div>
-              <div className="stat-content">
+              </>
+            )}
+          </div>
+        </div>
+        
+        <div className="stat-card">
+          <div className="stat-icon">👤</div>
+          <div className="stat-content">
+            {isLoading || appointments.length === 0 ? (
+              <>
+                <div className="skeleton-text skeleton"></div>
+                <div className="skeleton-text skeleton-small"></div>
+              </>
+            ) : (
+              <>
                 <h3>{filteredStats.uniqueClientsCount}</h3>
                 <p>Clientes</p>
-              </div>
-            </div>
-            
-            <div className="stat-card">
-              <div className="stat-icon">✅</div>
-              <div className="stat-content">
+              </>
+            )}
+          </div>
+        </div>
+        
+        <div className="stat-card">
+          <div className="stat-icon">✅</div>
+          <div className="stat-content">
+            {isLoading || appointments.length === 0 ? (
+              <>
+                <div className="skeleton-text skeleton"></div>
+                <div className="skeleton-text skeleton-small"></div>
+              </>
+            ) : (
+              <>
                 <h3>{filteredStats.completedAppointments}</h3>
                 <p>Concluídos</p>
-              </div>
-            </div>
-            
-            <div className="stat-card revenue-stat">
-              <div className="stat-icon">💰</div>
-              <div className="stat-content">
+              </>
+            )}
+          </div>
+        </div>
+        
+        <div className="stat-card revenue-stat">
+          <div className="stat-icon">💰</div>
+          <div className="stat-content">
+            {isLoading || appointments.length === 0 ? (
+              <>
+                <div className="skeleton-text skeleton"></div>
+                <div className="skeleton-text skeleton-small"></div>
+              </>
+            ) : (
+              <>
                 <h3>R$ {typeof filteredStats.totalRevenue === 'number' ? filteredStats.totalRevenue.toFixed(2) : filteredStats.totalRevenue}</h3>
                 <p>Receita Total</p>
-              </div>
-            </div>
-          </>
-        )}
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Filters Section */}
@@ -1087,7 +1115,7 @@ const AppointmentsSection = () => {
         onAdd={handleAdd}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        isLoading={isLoading}
+        isLoading={tableLoading}
         emptyMessage="Nenhum agendamento encontrado. Crie seu primeiro agendamento para começar!"
       />
 
