@@ -10,7 +10,8 @@ const Dashboard = () => {
     totalServices: '...',
     todayAppointments: '...',
     dailyRevenue: 0,
-    monthlyRevenue: 0
+    monthlyRevenue: 0,
+    previousMonthRevenue: 0
   })
   
   const [recentAppointments, setRecentAppointments] = useState([])
@@ -50,8 +51,12 @@ const Dashboard = () => {
         console.log('🏭 Dashboard loading in production mode');
       }
       
-      // Prioritize appointments data first (most critical for LCP)
-      const appointmentsResponse = await apiService.get('/api/appointments/')
+      // Prioritize today's appointments first (most critical for LCP)
+      // Use backend-cached endpoint + frontend in-memory cache (60s)
+      const [appointmentsResponse, statsResponse] = await Promise.all([
+        apiService.getCached('/api/appointments/today/', 60_000),
+        apiService.getCached('/api/appointments/stats/', 60_000),
+      ])
       
       // Production debugging for API response
       if (process.env.NODE_ENV === 'production') {
@@ -78,6 +83,17 @@ const Dashboard = () => {
         });
       }
       
+      // Update stats cards from backend stats (completed-only revenue)
+      if (statsResponse && typeof statsResponse === 'object') {
+        setStats(prev => ({
+          ...prev,
+          todayAppointments: statsResponse.today_appointments_count ?? prev.todayAppointments,
+          dailyRevenue: typeof statsResponse.today_revenue === 'number' ? statsResponse.today_revenue : prev.dailyRevenue,
+          monthlyRevenue: typeof statsResponse.month_revenue === 'number' ? statsResponse.month_revenue : prev.monthlyRevenue,
+          previousMonthRevenue: typeof statsResponse.previous_month_revenue === 'number' ? statsResponse.previous_month_revenue : prev.previousMonthRevenue,
+        }))
+      }
+
       // Process appointments immediately for faster display
       const now = new Date()
       const todaysAppointments = appointmentsArray.filter(apt => {
@@ -90,9 +106,9 @@ const Dashboard = () => {
       
       // Load other data in parallel (non-blocking)
       const [clientsResponse, teamResponse, servicesResponse] = await Promise.all([
-        apiService.get('/api/clients/'),
-        apiService.get('/api/team/'),
-        apiService.get('/api/services/')
+        apiService.getCached('/api/clients/', 60_000),
+        apiService.getCached('/api/team/', 60_000),
+        apiService.getCached('/api/services/', 60_000)
       ])
       
       // Handle paginated responses from Django REST framework
@@ -107,40 +123,17 @@ const Dashboard = () => {
         services: servicesData.length
       })
       
-      // Calculate revenue from completed appointments
-      const completedAppointments = appointmentsArray.filter(apt => apt.status === 'completed')
-      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-      
-      // Calculate daily revenue (today only)
-      const dailyRevenue = completedAppointments
-        .filter(apt => {
-          const aptDate = parseDateSafe(apt.appointment_date)
-          return aptDate && isSameDay(aptDate, now)
-        })
-        .reduce((sum, apt) => sum + (parseFloat(apt.total_price) || 0), 0)
-      
-      // Calculate monthly revenue
-      const monthlyRevenue = completedAppointments
-        .filter(apt => {
-          const aptDate = parseDateSafe(apt.appointment_date)
-          return aptDate && aptDate >= monthAgo
-        })
-        .reduce((sum, apt) => sum + (parseFloat(apt.total_price) || 0), 0)
-      
       // Use already filtered appointments count
       const todayAppointments = todaysAppointments.length
       
-      // Calculate stats from real data
-      const stats = {
+      // Update stats from fetched lists while preserving backend-provided revenues
+      setStats(prev => ({
+        ...prev,
         totalClients: clientsData.length,
         totalTeamMembers: teamData.length,
         totalServices: servicesData.length,
         todayAppointments: todayAppointments,
-        dailyRevenue: dailyRevenue,
-        monthlyRevenue: monthlyRevenue
-      }
-      
-      setStats(stats)
+      }))
       
       // Appointments already set above for faster rendering
       
@@ -159,7 +152,8 @@ const Dashboard = () => {
         totalServices: 0,
         todayAppointments: 0,
         dailyRevenue: 0,
-        monthlyRevenue: 0
+        monthlyRevenue: 0,
+        previousMonthRevenue: 0
       })
       setRecentAppointments([])
     } finally {
@@ -247,15 +241,16 @@ const Dashboard = () => {
           <div className="stat-content">
             <h3>R$ {typeof stats.monthlyRevenue === 'number' ? stats.monthlyRevenue.toFixed(2) : '0.00'}</h3>
             <p>Receita Mensal</p>
-            <span className="revenue-trend">Últimos 30 dias</span>
+            <span className="revenue-trend">Mês Atual</span>
           </div>
         </div>
         
-        <div className="stat-card">
-          <div className="stat-icon">✂️</div>
+        <div className="stat-card revenue-stat">
+          <div className="stat-icon">📈</div>
           <div className="stat-content">
-            <h3>{stats.totalServices}</h3>
-            <p>Serviços</p>
+            <h3>R$ {typeof stats.previousMonthRevenue === 'number' ? stats.previousMonthRevenue.toFixed(2) : '0.00'}</h3>
+            <p>Receita Mês Anterior</p>
+            <span className="revenue-trend">Comparativo</span>
           </div>
         </div>
         

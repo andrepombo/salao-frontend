@@ -22,6 +22,29 @@ const api = axios.create({
   withCredentials: true, // Include cookies for authentication
 });
 
+// Simple in-memory cache for GET responses
+const memoryCache = new Map(); // key -> { data, expiry }
+
+const getFromCache = (key) => {
+  const entry = memoryCache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiry) {
+    memoryCache.delete(key);
+    return null;
+  }
+  return entry.data;
+};
+
+const setInCache = (key, data, ttlMs) => {
+  memoryCache.set(key, { data, expiry: Date.now() + ttlMs });
+};
+
+const invalidateCacheByPrefix = (prefix) => {
+  for (const key of memoryCache.keys()) {
+    if (key.startsWith(prefix)) memoryCache.delete(key);
+  }
+};
+
 // Request interceptor for adding auth tokens if needed
 api.interceptors.request.use(
   (config) => {
@@ -134,21 +157,43 @@ export const apiService = {
     }
   },
 
+  // Cached GET with TTL (milliseconds). Default 60s.
+  getCached: async (endpoint, ttlMs = 60_000) => {
+    const cacheKey = `GET ${endpoint}`;
+    const cached = getFromCache(cacheKey);
+    if (cached !== null) {
+      if (process.env.NODE_ENV === 'production') {
+        console.log(`🧠 Cache HIT for ${endpoint}`);
+      }
+      return cached;
+    }
+    if (process.env.NODE_ENV === 'production') {
+      console.log(`🛰️ Cache MISS for ${endpoint}`);
+    }
+    const data = await api.get(endpoint).then(r => r.data);
+    setInCache(cacheKey, data, ttlMs);
+    return data;
+  },
+
   // Generic POST request
   post: async (endpoint, data) => {
     const response = await api.post(endpoint, data);
+    // Invalidate related caches for appointments and lists
+    invalidateCacheByPrefix('GET /api/appointments');
     return response.data;
   },
 
   // Generic PUT request
   put: async (endpoint, data) => {
     const response = await api.put(endpoint, data);
+    invalidateCacheByPrefix('GET /api/appointments');
     return response.data;
   },
 
   // Generic DELETE request
   delete: async (endpoint) => {
     const response = await api.delete(endpoint);
+    invalidateCacheByPrefix('GET /api/appointments');
     return response.data;
   },
 };
