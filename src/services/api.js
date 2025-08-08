@@ -178,8 +178,9 @@ export const apiService = {
   // Generic POST request
   post: async (endpoint, data) => {
     const response = await api.post(endpoint, data);
-    // Invalidate related caches for appointments and lists
+    // Invalidate related caches for appointments, lists, and section stats
     invalidateCacheByPrefix('GET /api/appointments');
+    invalidateCacheByPrefix('GET /api/appointments/section_stats');
     return response.data;
   },
 
@@ -187,6 +188,7 @@ export const apiService = {
   put: async (endpoint, data) => {
     const response = await api.put(endpoint, data);
     invalidateCacheByPrefix('GET /api/appointments');
+    invalidateCacheByPrefix('GET /api/appointments/section_stats');
     return response.data;
   },
 
@@ -194,6 +196,7 @@ export const apiService = {
   delete: async (endpoint) => {
     const response = await api.delete(endpoint);
     invalidateCacheByPrefix('GET /api/appointments');
+    invalidateCacheByPrefix('GET /api/appointments/section_stats');
     return response.data;
   },
 };

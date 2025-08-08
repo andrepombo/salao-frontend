@@ -896,7 +896,30 @@ const AppointmentsSection = () => {
     </div>
   )
 
-  // Stats for cards now come from backend via `stats` state
+  // Stats for cards: when filters are active, compute locally from filteredAppointments;
+  // otherwise use cached backend stats for overall figures
+  const isAnyFilterActive = useMemo(() => {
+    if (!activeFilters) return false
+    const date = activeFilters.appointment_date || {}
+    const status = activeFilters.status || ''
+    const hasDate = Boolean((date.start && date.start !== '') || (date.end && date.end !== ''))
+    const hasStatus = Boolean(status && status !== '')
+    return hasDate || hasStatus
+  }, [activeFilters])
+
+  const filteredCardStats = useMemo(() => {
+    // Compute the four cards metrics from filteredAppointments
+    const totalAppointments = filteredAppointments.length
+    
+    // today in YYYY-MM-DD
+    const todayStr = new Date().toISOString().split('T')[0]
+    const todayAppointments = filteredAppointments.filter(a => a.appointment_date === todayStr).length
+    const confirmedAppointments = filteredAppointments.filter(a => a.status === 'confirmed').length
+    const totalRevenue = filteredAppointments.reduce((sum, a) => sum + (parseFloat(a.total_price) || 0), 0)
+    return { totalAppointments, todayAppointments, confirmedAppointments, totalRevenue }
+  }, [filteredAppointments])
+
+  const cardsStats = isAnyFilterActive ? filteredCardStats : stats
 
   return (
     <div className="appointments-section">
@@ -906,7 +929,7 @@ const AppointmentsSection = () => {
           <div className="stat-icon">📅</div>
           <div className="stat-content">
             <>
-              <h3>{stats.totalAppointments}</h3>
+              <h3>{cardsStats.totalAppointments}</h3>
               <p>Total de Agendamentos</p>
             </>
           </div>
@@ -916,7 +939,7 @@ const AppointmentsSection = () => {
           <div className="stat-icon">📆</div>
           <div className="stat-content">
             <>
-              <h3>{stats.todayAppointments}</h3>
+              <h3>{cardsStats.todayAppointments}</h3>
               <p>Agendamentos de Hoje</p>
             </>
           </div>
@@ -926,7 +949,7 @@ const AppointmentsSection = () => {
           <div className="stat-icon">✅</div>
           <div className="stat-content">
             <>
-              <h3>{stats.confirmedAppointments}</h3>
+              <h3>{cardsStats.confirmedAppointments}</h3>
               <p>Confirmados</p>
             </>
           </div>
@@ -936,7 +959,7 @@ const AppointmentsSection = () => {
           <div className="stat-icon">💰</div>
           <div className="stat-content">
             <>
-              <h3>R$ {typeof stats.totalRevenue === 'number' ? stats.totalRevenue.toFixed(2) : stats.totalRevenue}</h3>
+              <h3>R$ {typeof cardsStats.totalRevenue === 'number' ? cardsStats.totalRevenue.toFixed(2) : cardsStats.totalRevenue}</h3>
               <p>Receita Total</p>
             </>
           </div>
