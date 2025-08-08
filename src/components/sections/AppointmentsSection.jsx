@@ -31,6 +31,23 @@ const AppointmentsSection = () => {
   }) // Use placeholder values for immediate rendering
   const [activeFilters, setActiveFilters] = useState({})
 
+  // Fetch aggregated stats from backend (cached)
+  const fetchSectionStats = async () => {
+    try {
+      const data = await apiService.getCached('/api/appointments/section_stats/', 60000)
+      // Normalize and update stats state
+      setStats({
+        totalAppointments: data?.total_appointments ?? 0,
+        todayAppointments: data?.today_appointments ?? 0,
+        confirmedAppointments: data?.confirmed_appointments ?? 0,
+        totalRevenue: typeof data?.total_revenue === 'number' ? data.total_revenue : parseFloat(data?.total_revenue || 0)
+      })
+    } catch (err) {
+      console.error('Failed to fetch section stats:', err)
+      setStats({ totalAppointments: 0, todayAppointments: 0, confirmedAppointments: 0, totalRevenue: 0 })
+    }
+  }
+
   // Function to get available services for a selected team member
   const getAvailableServices = (teamMemberId) => {
     if (!teamMemberId || !teamMembers || !services) return []
@@ -259,7 +276,8 @@ const AppointmentsSection = () => {
       loadAppointments(),
       loadClients(),
       loadTeamMembers(),
-      loadServices()
+      loadServices(),
+      fetchSectionStats()
     ])
   }, [])
 
@@ -321,29 +339,13 @@ const AppointmentsSection = () => {
         
         setAppointments(processedAppointments)
         
-        // Calculate and update statistics
-        const calculatedStats = calculateStats(filteredAppointments)
-        setStats(calculatedStats)
-        
       } catch (apiError) {
         console.error('AppointmentsSection - Failed to load appointments from backend:', apiError)
         setAppointments([])
-        setStats({
-          totalAppointments: 0,
-          uniqueClientsCount: 0,
-          completedAppointments: 0,
-          totalRevenue: 0
-        })
       }
     } catch (error) {
       console.error('Error loading appointments:', error)
       setAppointments([])
-      setStats({
-        totalAppointments: 0,
-        todayAppointments: 0,
-        confirmedAppointments: 0,
-        totalRevenue: 0
-      })
     } finally {
       setTableLoading(false)
       setIsLoading(false)
@@ -470,8 +472,8 @@ const AppointmentsSection = () => {
         // Remove the deleted appointment from the list
         setAppointments(appointments.filter(apt => apt.id !== appointment.id))
         
-        // Update stats
-        setStats(calculateStats(appointments.filter(apt => apt.id !== appointment.id)))
+        // Refresh aggregated stats from backend
+        fetchSectionStats()
         
         alert('Agendamento excluído com sucesso!')
       } catch (error) {
@@ -595,6 +597,9 @@ const AppointmentsSection = () => {
             console.log('🔄 Updated appointments state:', updated)
             return updated
           })
+
+          // Refresh aggregated stats after update
+          fetchSectionStats()
           
           // Track appointment update
           trackAppointment('Updated', {
@@ -663,6 +668,9 @@ const AppointmentsSection = () => {
             total_duration: totalDuration
           }
           setAppointments(prev => [...prev, newWithNames])
+
+          // Refresh aggregated stats after creation
+          fetchSectionStats()
           
           // Track appointment creation
           trackAppointment('Created', {
@@ -888,8 +896,7 @@ const AppointmentsSection = () => {
     </div>
   )
 
-  // Calculate stats based on filtered appointments instead of all appointments
-  const filteredStats = useMemo(() => calculateStats(filteredAppointments), [filteredAppointments])
+  // Stats for cards now come from backend via `stats` state
 
   return (
     <div className="appointments-section">
@@ -898,68 +905,40 @@ const AppointmentsSection = () => {
         <div className="stat-card">
           <div className="stat-icon">📅</div>
           <div className="stat-content">
-            {isLoading || appointments.length === 0 ? (
-              <>
-                <h3>0</h3>
-                <p>Total de Agendamentos</p>
-              </>
-            ) : (
-              <>
-                <h3>{filteredStats.totalAppointments}</h3>
-                <p>Total de Agendamentos</p>
-              </>
-            )}
+            <>
+              <h3>{stats.totalAppointments}</h3>
+              <p>Total de Agendamentos</p>
+            </>
           </div>
         </div>
         
         <div className="stat-card">
-          <div className="stat-icon">👤</div>
+          <div className="stat-icon">📆</div>
           <div className="stat-content">
-            {isLoading || appointments.length === 0 ? (
-              <>
-                <h3>0</h3>
-                <p>Clientes</p>
-              </>
-            ) : (
-              <>
-                <h3>{filteredStats.uniqueClientsCount}</h3>
-                <p>Clientes</p>
-              </>
-            )}
+            <>
+              <h3>{stats.todayAppointments}</h3>
+              <p>Agendamentos de Hoje</p>
+            </>
           </div>
         </div>
         
         <div className="stat-card">
           <div className="stat-icon">✅</div>
           <div className="stat-content">
-            {isLoading || appointments.length === 0 ? (
-              <>
-                <h3>0</h3>
-                <p>Concluídos</p>
-              </>
-            ) : (
-              <>
-                <h3>{filteredStats.completedAppointments}</h3>
-                <p>Concluídos</p>
-              </>
-            )}
+            <>
+              <h3>{stats.confirmedAppointments}</h3>
+              <p>Confirmados</p>
+            </>
           </div>
         </div>
         
         <div className="stat-card revenue-stat">
           <div className="stat-icon">💰</div>
           <div className="stat-content">
-            {isLoading || appointments.length === 0 ? (
-              <>
-                <h3>R$ 0.00</h3>
-                <p>Receita Total</p>
-              </>
-            ) : (
-              <>
-                <h3>R$ {typeof filteredStats.totalRevenue === 'number' ? filteredStats.totalRevenue.toFixed(2) : filteredStats.totalRevenue}</h3>
-                <p>Receita Total</p>
-              </>
-            )}
+            <>
+              <h3>R$ {typeof stats.totalRevenue === 'number' ? stats.totalRevenue.toFixed(2) : stats.totalRevenue}</h3>
+              <p>Receita Total</p>
+            </>
           </div>
         </div>
       </div>
