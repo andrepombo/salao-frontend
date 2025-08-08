@@ -900,8 +900,8 @@ const AppointmentsSection = () => {
           <div className="stat-content">
             {isLoading || appointments.length === 0 ? (
               <>
-                <div className="skeleton-text skeleton"></div>
-                <div className="skeleton-text skeleton-small"></div>
+                <h3>0</h3>
+                <p>Total de Agendamentos</p>
               </>
             ) : (
               <>
@@ -917,8 +917,8 @@ const AppointmentsSection = () => {
           <div className="stat-content">
             {isLoading || appointments.length === 0 ? (
               <>
-                <div className="skeleton-text skeleton"></div>
-                <div className="skeleton-text skeleton-small"></div>
+                <h3>0</h3>
+                <p>Clientes</p>
               </>
             ) : (
               <>
@@ -934,8 +934,8 @@ const AppointmentsSection = () => {
           <div className="stat-content">
             {isLoading || appointments.length === 0 ? (
               <>
-                <div className="skeleton-text skeleton"></div>
-                <div className="skeleton-text skeleton-small"></div>
+                <h3>0</h3>
+                <p>Concluídos</p>
               </>
             ) : (
               <>
@@ -951,8 +951,8 @@ const AppointmentsSection = () => {
           <div className="stat-content">
             {isLoading || appointments.length === 0 ? (
               <>
-                <div className="skeleton-text skeleton"></div>
-                <div className="skeleton-text skeleton-small"></div>
+                <h3>R$ 0.00</h3>
+                <p>Receita Total</p>
               </>
             ) : (
               <>
