@@ -20,7 +20,7 @@ const Sidebar = ({ connectionStatus, onRetryConnection }) => {
       <div className="sidebar-header">
         <div className="logo">
           <span className="logo-icon">💇‍♀️</span>
-          {!isCollapsed && <span className="logo-text">Salão Manager2</span>}
+          {!isCollapsed && <span className="logo-text">Salão Manager3</span>}
         </div>
         <button 
           className="collapse-btn"

@@ -43,9 +43,9 @@ jobs:
           echo "Waiting for containers to start..."
           sleep 10
 
-          # Health check via Traefik / public URL
+          # Health check via Traefik / public HTTPS URL
           echo "Performing health check..."
-          if curl -f http://app2.andrepombo.info > /dev/null 2>&1; then
+          if curl -f https://app2.andrepombo.info > /dev/null 2>&1; then
             echo "✅ Frontend deployment successful! Application is responding."
           else
             echo "❌ Health check failed. Checking container logs..."
