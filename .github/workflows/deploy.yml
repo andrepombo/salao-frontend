@@ -38,10 +38,10 @@ jobs:
           docker system prune --volumes -f
 
           # echo "Stopping existing containers..."
-          # docker-compose down || true
+          # docker compose down || true
 
           echo "Building and starting frontend containers..."
-          docker-compose up -d --build
+          docker compose up -d --build
 
           echo "Waiting for containers to start..."
           sleep 10
@@ -52,7 +52,7 @@ jobs:
             echo "✅ Frontend deployment successful! Application is responding."
           else
             echo "❌ Health check failed. Checking container logs..."
-            docker-compose logs
+            docker compose logs
             exit 1
           fi
 
