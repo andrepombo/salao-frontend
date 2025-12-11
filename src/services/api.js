@@ -1,7 +1,12 @@
 import axios from 'axios';
 
 // Base URL for your Django backend
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"
+const isProd = import.meta.env.MODE === 'production';
+
+const API_BASE_URL = isProd
+  ? (import.meta.env.VITE_API_BASE_URL || '/api')
+  : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000');
+
 // Debug API configuration in production
 if (import.meta.env.MODE === 'production') {
   console.log('🔧 Production API Config:', {
