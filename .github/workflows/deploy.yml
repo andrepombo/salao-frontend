@@ -28,31 +28,28 @@ jobs:
         SOURCE: "./"
         REMOTE_HOST: ${{ secrets.VPS_HOST }}
         REMOTE_USER: ${{ secrets.VPS_SSH_USER }}
-        TARGET: '/home/${{ secrets.VPS_SSH_USER }}/salao-frontend'
+        TARGET: '/home/${{ secrets.VPS_SSH_USER }}/apps/app2/frontend'
         EXCLUDE: "/dist/, /node_modules/, /.git/, /coverage/, /.vscode/, /.idea/"
         SCRIPT_AFTER: |
-          # Build and start the frontend services
-          cd /home/${{ secrets.VPS_SSH_USER }}/salao-frontend
+          # Build and start the frontend service from the main app2 stack
+          cd /home/${{ secrets.VPS_SSH_USER }}/apps/app2
 
           echo "Cleaning up unused Docker resources..."
           docker system prune --volumes -f
 
-          # echo "Stopping existing containers..."
-          # docker compose down || true
-
-          echo "Building and starting frontend containers..."
-          docker compose up -d --build
+          echo "Building and starting frontend container..."
+          docker compose up -d --build frontend
 
           echo "Waiting for containers to start..."
           sleep 10
 
-          # Health check
+          # Health check via Traefik / public URL
           echo "Performing health check..."
           if curl -f http://app2.andrepombo.info > /dev/null 2>&1; then
             echo "✅ Frontend deployment successful! Application is responding."
           else
             echo "❌ Health check failed. Checking container logs..."
-            docker compose logs
+            docker compose logs frontend --tail=50
             exit 1
           fi
 
