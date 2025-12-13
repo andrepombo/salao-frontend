@@ -5,22 +5,23 @@ on:
     branches:
       - main
 
+concurrency:
+  group: deploy-frontend
+  cancel-in-progress: true
+
+env:
+  APP_BASE_URL: https://app2.andrepombo.info
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Verify deployment files
-      run: |
-        echo "Files to be deployed:"
-        ls -la
-        echo "Docker compose file:"
-        cat docker-compose.yml
-
-    - name: Copy files with SSH
+    - name: Copy files to VPS
       uses: easingthemes/ssh-deploy@main
       with:
         SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_KEY }}
@@ -31,11 +32,16 @@ jobs:
         TARGET: '/home/${{ secrets.VPS_SSH_USER }}/apps/app2/frontend'
         EXCLUDE: "/dist/, /node_modules/, /.git/, /coverage/, /.vscode/, /.idea/"
         SCRIPT_AFTER: |
-          # Build and start the frontend service from the main app2 stack
-          cd /home/${{ secrets.VPS_SSH_USER }}/apps/app2
+          echo "Files copied successfully"
 
-          echo "Cleaning up unused Docker resources..."
-          docker system prune --volumes -f
+    - name: Build and start frontend container
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_SSH_USER }}
+        key: ${{ secrets.VPS_SSH_KEY }}
+        script: |
+          cd /home/${{ secrets.VPS_SSH_USER }}/apps/app2
 
           echo "Building and starting frontend container..."
           docker compose up -d --build frontend
@@ -43,14 +49,29 @@ jobs:
           echo "Waiting for containers to start..."
           sleep 10
 
+          echo "Checking container status for frontend..."
+          docker compose ps frontend
+
+          echo "Frontend deployment completed successfully!"
+
+    - name: Frontend health check
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_SSH_USER }}
+        key: ${{ secrets.VPS_SSH_KEY }}
+        script: |
+          cd /home/${{ secrets.VPS_SSH_USER }}/apps/app2
+          echo "Performing frontend health check via public HTTPS URL..."
+          sleep 10
+
           # Health check via Traefik / public HTTPS URL
-          echo "Performing health check..."
-          if curl -f https://app2.andrepombo.info > /dev/null 2>&1; then
-            echo "✅ Frontend deployment successful! Application is responding."
+          if curl -f -s ${{ env.APP_BASE_URL }} > /dev/null 2>&1; then
+            echo " Frontend deployment successful! Application is responding."
           else
-            echo "❌ Health check failed. Checking container logs..."
+            echo " Health check failed. Checking container logs..."
             docker compose logs frontend --tail=50
             exit 1
           fi
 
-          echo "🚀 Frontend deployment completed successfully!"
+          echo "🚀 Frontend deployment health check completed!"
