@@ -88,15 +88,29 @@ const Sidebar = ({ connectionStatus, onRetryConnection }) => {
   return (
     <div className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-header">
-        <div className="logo">
-          <span className="logo-icon">💇‍♀️</span>
-          {!isCollapsed && <span className="logo-text">Salão</span>}
-        </div>
+        {!isCollapsed && (
+          <div className="logo">
+            <span className="logo-icon">💇‍♀️</span>
+            <span className="logo-text">Salão</span>
+          </div>
+        )}
         <button 
           className="collapse-btn"
           onClick={() => setIsCollapsed(!isCollapsed)}
         >
-          {isCollapsed ? '→' : '←'}
+          <svg
+            className={`collapse-icon ${isCollapsed ? 'collapsed' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+            />
+          </svg>
         </button>
       </div>
 
