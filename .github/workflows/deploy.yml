@@ -21,6 +21,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Create .env file
+      env:
+        ENV: ${{ secrets.ENV }}
+      run: |
+        echo "ENV=${ENV}" >> .env
+
     - name: Copy files to VPS
       uses: easingthemes/ssh-deploy@main
       with:
