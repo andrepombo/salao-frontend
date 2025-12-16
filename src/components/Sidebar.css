@@ -2,7 +2,7 @@
   height: 100vh;
   width: 250px;
   min-width: 250px;
-  background: linear-gradient(to bottom, #1e1b4b 0%, #4c1d95 50%, #1e1b4b 100%);
+  background: linear-gradient(to bottom, #2563eb 0%, #4f46e5 45%, #1d4ed8 100%);
   backdrop-filter: blur(12px);
   border-right: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
@@ -32,6 +32,7 @@
 
 .sidebar.collapsed .nav-icon {
   margin-right: 0;
+  transform: translateY(1px);
 }
 
 .sidebar-header {
@@ -62,7 +63,7 @@
   align-items: center;
   justify-content: center;
   background: white;
-  color: #4c1d95;
+  color: #2563eb;
   box-shadow: 0 10px 25px rgba(15, 23, 42, 0.45);
 }
 
@@ -135,7 +136,8 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(to right, rgba(129, 140, 248, 0.4), rgba(192, 132, 252, 0.45));
+  /* Lighter blue gradient used for hover */
+  background: linear-gradient(to right, rgba(59, 130, 246, 0.35), rgba(129, 199, 245, 0.45));
   opacity: 0;
   transform: scaleX(0.9);
   transform-origin: left;
@@ -144,10 +146,11 @@
 }
 
 .nav-item:hover {
-  background: rgba(15, 23, 42, 0.35);
+  /* Hover pill: lighter than active */
+  background: rgba(59, 130, 246, 0.18);
   color: white;
   transform: translateY(-1px);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.6);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.55);
 }
 
 .nav-item:hover::before {
@@ -156,13 +159,15 @@
 }
 
 .nav-item.active {
-  background: rgba(15, 23, 42, 0.55);
+  background: rgba(59, 130, 246, 0.32);
   color: white;
   font-weight: 600;
-  box-shadow: 0 16px 35px rgba(15, 23, 42, 0.85);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.7);
 }
 
 .nav-item.active::before {
+  /* Active pill: stronger gradient than hover */
+  background: linear-gradient(to right, rgba(59, 130, 246, 0.65), rgba(129, 199, 245, 0.85));
   opacity: 1;
   transform: scaleX(1);
 }
