@@ -76,6 +76,15 @@ const AppointmentsSection = () => {
     return statusMap[statusKey] || statusKey
   }
 
+  // Filter selected service IDs to only those offered by a given team member
+  const filterServicesByTeamMember = (serviceIds = [], teamMemberId) => {
+    if (!teamMemberId) return []
+    const member = (teamMembers || []).find(m => m.id === parseInt(teamMemberId))
+    if (!member || !Array.isArray(member.specialties)) return []
+    const specialties = member.specialties.map(s => parseInt(s))
+    return (serviceIds || []).map(s => parseInt(s)).filter(id => specialties.includes(id))
+  }
+
   // Function to calculate appointment statistics
   const calculateStats = (appointmentsData) => {
     const today = new Date()
@@ -180,6 +189,16 @@ const AppointmentsSection = () => {
       options: (teamMembers || []).map(member => ({ value: member.id, label: member.name })),
       onChange: (value) => {
         setSelectedTeamMember(value)
+        // If we are editing and services are selected, drop services not offered by the new professional
+        if (editingAppointment && Array.isArray(editingAppointment.services)) {
+          const filtered = filterServicesByTeamMember(editingAppointment.services, value)
+          setEditingAppointment(prev => prev ? { ...prev, team_member_id: parseInt(value), services: filtered } : prev)
+          if (filtered.length !== (editingAppointment.services || []).length) {
+            setConflictError('Alguns serviços foram removidos pois não são oferecidos por este profissional.')
+          } else {
+            setConflictError(null)
+          }
+        }
       }
     },
     {
@@ -437,13 +456,22 @@ const AppointmentsSection = () => {
       console.log('Services from backend:', detailedAppointment.services)
       console.log('Extracted service IDs:', serviceIds)
       
+      // Ensure services are compatible with the selected professional
+      const initialTeamMemberId = detailedAppointment.team_member?.id
+      const filteredServiceIds = filterServicesByTeamMember(serviceIds, initialTeamMemberId)
+      if (filteredServiceIds.length !== serviceIds.length) {
+        setConflictError('Alguns serviços deste agendamento não são oferecidos pelo profissional atual e foram removidos.')
+      } else {
+        setConflictError(null)
+      }
+
       const transformedAppointment = {
         ...detailedAppointment,
         // Extract IDs from the nested objects
         client_id: detailedAppointment.client?.id,
         team_member_id: detailedAppointment.team_member?.id,
         // Extract service IDs from the services array
-        services: serviceIds,
+        services: filteredServiceIds,
         // Keep other fields as they are
         appointment_date: detailedAppointment.appointment_date,
         appointment_time: detailedAppointment.appointment_time,
@@ -535,11 +563,19 @@ const AppointmentsSection = () => {
       console.log('Final calculated total price:', totalPrice)
       console.log('Service names:', serviceNames)
       
+      // Validate services against the selected professional's specialties
+      const allowedServices = filterServicesByTeamMember(selectedServices, formData.team_member_id)
+      if (allowedServices.length !== selectedServices.length) {
+        setConflictError('Há serviços selecionados que não são oferecidos pelo profissional. Ajuste a seleção de serviços.')
+        setIsSubmitting(false)
+        return
+      }
+
       // Prepare data for backend API (Django expects specific field names)
       const appointmentData = {
         client: parseInt(formData.client_id),
         team_member: parseInt(formData.team_member_id),
-        services: selectedServices.map(id => parseInt(id)),
+        services: allowedServices.map(id => parseInt(id)),
         appointment_date: formData.appointment_date,
         appointment_time: formData.appointment_time,
         status: formData.status || 'scheduled',
