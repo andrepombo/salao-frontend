@@ -1,9 +1,7 @@
 .dashboard {
   padding: 1.5rem;
-  max-width: 1200px;
+  max-width: 100%;
   margin: 0 auto;
-  height: 100%;
-  overflow-y: auto;
 }
 
 .dashboard-loading {
@@ -153,15 +151,13 @@
 }
 
 .status-columns {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 1rem;
-  overflow-x: auto;
   padding-bottom: 0.5rem;
 }
 
 .status-group {
-  flex: 1;
-  min-width: 240px;
   background: #f8fafc;
   border-radius: 8px;
   padding: 1rem;

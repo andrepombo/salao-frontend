@@ -104,7 +104,7 @@ const Sidebar = ({ connectionStatus, onRetryConnection }) => {
                 <line x1="8.12" y1="8.12" x2="12" y2="12" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </span>
-            <span className="logo-text">Salão Maria</span>
+            <span className="logo-text">Salão Fátima</span>
           </div>
         )}
         <button 

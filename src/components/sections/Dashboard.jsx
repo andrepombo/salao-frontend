@@ -205,12 +205,10 @@ const Dashboard = () => {
     }, {})
     
     // Sort by workflow order: scheduled, confirmed, in_progress, completed
-    const statusOrder = ['scheduled', 'confirmed', 'in_progress', 'completed']
+    const statusOrder = ['scheduled', 'confirmed', 'in_progress', 'completed', 'cancelled', 'no_show']
     const sortedGrouped = {}
     statusOrder.forEach(status => {
-      if (grouped[status]) {
-        sortedGrouped[status] = grouped[status]
-      }
+      sortedGrouped[status] = grouped[status] || []
     })
     return sortedGrouped
   }
