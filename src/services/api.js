@@ -205,6 +205,14 @@ export const apiService = {
     invalidateCacheByPrefix('GET /api/appointments/section_stats');
     return response.data;
   },
+
+  // Delete appointment by ID
+  deleteAppointment: async (id) => {
+    const response = await api.delete(`/api/appointments/${id}/`);
+    invalidateCacheByPrefix('GET /api/appointments');
+    invalidateCacheByPrefix('GET /api/appointments/section_stats');
+    return response.data;
+  },
 };
 
 export default api;
