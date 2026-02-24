@@ -7,7 +7,7 @@ import { Alert, TextField, Select, MenuItem, FormControl, InputLabel } from '@mu
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
-import { ptBR } from 'date-fns/locale'
+import { ptBR, enUS } from 'date-fns/locale'
 import './AppointmentsSection.css'
 
 const AppointmentsSection = ({ language = 'pt' }) => {
@@ -63,9 +63,9 @@ const AppointmentsSection = ({ language = 'pt' }) => {
       }))
   }
 
-  // Function to get Portuguese status label from English key
+  // Function to get localized status label from status key
   const getStatusLabel = (statusKey) => {
-    const statusMap = {
+    const labelsPt = {
       'scheduled': 'Agendado',
       'confirmed': 'Confirmado', 
       'in_progress': 'Em Andamento',
@@ -73,7 +73,16 @@ const AppointmentsSection = ({ language = 'pt' }) => {
       'cancelled': 'Cancelado',
       'no_show': 'Não Compareceu'
     }
-    return statusMap[statusKey] || statusKey
+    const labelsEn = {
+      'scheduled': 'Scheduled',
+      'confirmed': 'Confirmed', 
+      'in_progress': 'In Progress',
+      'completed': 'Completed',
+      'cancelled': 'Cancelled',
+      'no_show': 'No Show'
+    }
+    const labels = language === 'en' ? labelsEn : labelsPt
+    return labels[statusKey] || statusKey
   }
 
   // Filter selected service IDs to only those offered by a given team member
@@ -121,12 +130,12 @@ const AppointmentsSection = ({ language = 'pt' }) => {
     }
   }
 
-  const columns = [
-    { key: 'client_name', label: 'Cliente' },
-    { key: 'team_member_name', label: 'Profissional' },
-    { key: 'appointment_date', label: 'Data', type: 'date' },
-    { key: 'appointment_time', label: 'Horário', type: 'time' },
-    { key: 'status', label: 'Status', type: 'badge', 
+  const columns = useMemo(() => [
+    { key: 'client_name', label: language === 'en' ? 'Client' : 'Cliente' },
+    { key: 'team_member_name', label: language === 'en' ? 'Professional' : 'Profissional' },
+    { key: 'appointment_date', label: language === 'en' ? 'Date' : 'Data', type: 'date' },
+    { key: 'appointment_time', label: language === 'en' ? 'Time' : 'Horário', type: 'time' },
+    { key: 'status', label: language === 'en' ? 'Status' : 'Status', type: 'badge', 
       render: (value) => getStatusLabel(value),
       badgeColor: (value) => {
         const colors = {
@@ -140,8 +149,8 @@ const AppointmentsSection = ({ language = 'pt' }) => {
         return colors[value] || 'default'
       }
     },
-    { key: 'total_price', label: 'Total', type: 'currency' },
-    { key: 'total_duration', label: 'Duração', 
+    { key: 'total_price', label: language === 'en' ? 'Total' : 'Total', type: 'currency' },
+    { key: 'total_duration', label: language === 'en' ? 'Duration' : 'Duração', 
       render: (value) => {
         if (!value) return '-';
         const hours = Math.floor(value / 60);
@@ -152,8 +161,8 @@ const AppointmentsSection = ({ language = 'pt' }) => {
         return `${minutes}min`;
       }
     },
-    { key: 'services_list', label: 'Serviços' }
-  ]
+    { key: 'services_list', label: language === 'en' ? 'Services' : 'Serviços' }
+  ], [language])
 
   const formFields = useMemo(() => [
     {
@@ -813,22 +822,31 @@ const AppointmentsSection = ({ language = 'pt' }) => {
     {
       key: 'appointment_date',
       type: 'dateRange',
-      placeholder: 'Filtrar por período'
+      placeholder: language === 'en' ? 'Filter by period' : 'Filtrar por período'
     },
     {
       key: 'status',
-      label: 'Status',
+      label: language === 'en' ? 'Status' : 'Status',
       type: 'select',
-      options: [
-        { value: 'scheduled', label: 'Agendado' },
-        { value: 'confirmed', label: 'Confirmado' },
-        { value: 'in_progress', label: 'Em Andamento' },
-        { value: 'completed', label: 'Concluído' },
-        { value: 'cancelled', label: 'Cancelado' },
-        { value: 'no_show', label: 'Não Compareceu' }
-      ]
+      options: language === 'en'
+        ? [
+            { value: 'scheduled', label: 'Scheduled' },
+            { value: 'confirmed', label: 'Confirmed' },
+            { value: 'in_progress', label: 'In Progress' },
+            { value: 'completed', label: 'Completed' },
+            { value: 'cancelled', label: 'Cancelled' },
+            { value: 'no_show', label: 'No Show' }
+          ]
+        : [
+            { value: 'scheduled', label: 'Agendado' },
+            { value: 'confirmed', label: 'Confirmado' },
+            { value: 'in_progress', label: 'Em Andamento' },
+            { value: 'completed', label: 'Concluído' },
+            { value: 'cancelled', label: 'Cancelado' },
+            { value: 'no_show', label: 'Não Compareceu' }
+          ]
     }
-  ], [])
+  ], [language])
 
   // Initialize filters when component mounts
   useEffect(() => {
@@ -1003,7 +1021,10 @@ const AppointmentsSection = ({ language = 'pt' }) => {
       </div>
 
       {/* Filters Section */}
-      <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ptBR}>
+      <LocalizationProvider 
+        dateAdapter={AdapterDateFns} 
+        adapterLocale={language === 'en' ? enUS : ptBR}
+      >
         {tableFilters.length > 0 && (
           <div className="data-table-filters">
             {tableFilters.map(filter => (

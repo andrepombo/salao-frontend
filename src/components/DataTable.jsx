@@ -276,7 +276,7 @@ const DataTable = ({
             disabled={isLoading}
           >
             <span>+</span>
-            Adicionar
+            {language === 'en' ? 'Add' : 'Adicionar'}
           </button>
         </div>
       </div>
