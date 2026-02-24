@@ -73,8 +73,26 @@ const Dashboard = ({ language = 'pt' }) => {
       const appointmentsData = appointmentsResponse?.results || appointmentsResponse || []
       
       // Ensure appointmentsData is an array
-      const appointmentsArray = Array.isArray(appointmentsData) ? appointmentsData : []
+      let appointmentsArray = Array.isArray(appointmentsData) ? appointmentsData : []
       console.log('Appointments data:', appointmentsArray)
+      
+      // Fallback demo date: if there are no appointments for today, load appointments for 2025-12-18
+      let demoOverrideDate = null
+      if (appointmentsArray.length === 0) {
+        try {
+          const demoDate = '2025-12-18'
+          const fallbackResponse = await apiService.getCached(`/api/appointments/?appointment_date=${demoDate}`, 60_000)
+          const fallbackData = fallbackResponse?.results || fallbackResponse || []
+          const fallbackArray = Array.isArray(fallbackData) ? fallbackData : []
+          if (fallbackArray.length > 0) {
+            console.log('Using demo fallback appointments for 2025-12-18:', fallbackArray.length)
+            appointmentsArray = fallbackArray
+            demoOverrideDate = new Date(2025, 11, 18)
+          }
+        } catch (fallbackError) {
+          console.error('Error loading fallback demo appointments:', fallbackError)
+        }
+      }
       
       // Production debugging for final array
       if (process.env.NODE_ENV === 'production') {
@@ -97,7 +115,7 @@ const Dashboard = ({ language = 'pt' }) => {
       }
 
       // Process appointments immediately for faster display
-      const now = new Date()
+      const now = demoOverrideDate || new Date()
       const todaysAppointments = appointmentsArray.filter(apt => {
         const aptDate = parseDateSafe(apt.appointment_date)
         return aptDate && isSameDay(aptDate, now)
