@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { apiService } from '../../services/api'
 import './Dashboard.css'
 
-const Dashboard = () => {
+const Dashboard = ({ language = 'pt' }) => {
   // Initialize with placeholder data for faster LCP
   const [stats, setStats] = useState({
     totalClients: '...',
@@ -16,6 +16,8 @@ const Dashboard = () => {
   
   const [recentAppointments, setRecentAppointments] = useState([])
   const [isLoading, setIsLoading] = useState(false) // Start with false to render immediately
+
+  const locale = language === 'en' ? 'en-US' : 'pt-BR'
 
   useEffect(() => {
     loadDashboardData()
@@ -174,7 +176,7 @@ const Dashboard = () => {
   }
 
   const getStatusLabel = (status) => {
-    const labels = {
+    const labelsPt = {
       'scheduled': 'Agendado',
       'confirmed': 'Confirmado',
       'in_progress': 'Em Andamento',
@@ -182,6 +184,15 @@ const Dashboard = () => {
       'cancelled': 'Cancelado',
       'no_show': 'Não Compareceu'
     }
+    const labelsEn = {
+      'scheduled': 'Scheduled',
+      'confirmed': 'Confirmed',
+      'in_progress': 'In Progress',
+      'completed': 'Completed',
+      'cancelled': 'Cancelled',
+      'no_show': 'No Show'
+    }
+    const labels = language === 'en' ? labelsEn : labelsPt
     return labels[status] || status
   }
 
@@ -217,7 +228,7 @@ const Dashboard = () => {
     return (
       <div className="dashboard-loading">
         <div className="loading-spinner"></div>
-        <p>Carregando painel...</p>
+        <p>{language === 'en' ? 'Loading dashboard...' : 'Carregando painel...'}</p>
       </div>
     )
   }
@@ -229,8 +240,8 @@ const Dashboard = () => {
           <div className="stat-icon">💰</div>
           <div className="stat-content">
             <h3>R$ {typeof stats.dailyRevenue === 'number' ? stats.dailyRevenue.toFixed(2) : '0.00'}</h3>
-            <p>Receita Diária</p>
-            <span className="revenue-trend">Hoje, {new Date().toLocaleDateString('pt-BR')}</span>
+            <p>{language === 'en' ? 'Daily Revenue' : 'Receita Diária'}</p>
+            <span className="revenue-trend">{language === 'en' ? 'Today, ' : 'Hoje, '}{new Date().toLocaleDateString(locale)}</span>
           </div>
         </div>
         
@@ -238,8 +249,8 @@ const Dashboard = () => {
           <div className="stat-icon">💵</div>
           <div className="stat-content">
             <h3>R$ {typeof stats.monthlyRevenue === 'number' ? stats.monthlyRevenue.toFixed(2) : '0.00'}</h3>
-            <p>Receita Mensal</p>
-            <span className="revenue-trend">Mês Atual</span>
+            <p>{language === 'en' ? 'Monthly Revenue' : 'Receita Mensal'}</p>
+            <span className="revenue-trend">{language === 'en' ? 'Current Month' : 'Mês Atual'}</span>
           </div>
         </div>
         
@@ -247,8 +258,8 @@ const Dashboard = () => {
           <div className="stat-icon">📈</div>
           <div className="stat-content">
             <h3>R$ {typeof stats.previousMonthRevenue === 'number' ? stats.previousMonthRevenue.toFixed(2) : '0.00'}</h3>
-            <p>Receita Mês Anterior</p>
-            <span className="revenue-trend">Comparativo</span>
+            <p>{language === 'en' ? 'Previous Month Revenue' : 'Receita Mês Anterior'}</p>
+            <span className="revenue-trend">{language === 'en' ? 'Comparison' : 'Comparativo'}</span>
           </div>
         </div>
         
@@ -256,14 +267,14 @@ const Dashboard = () => {
           <div className="stat-icon">📅</div>
           <div className="stat-content">
             <h3>{stats.todayAppointments}</h3>
-            <p>Agendamentos de Hoje</p>
+            <p>{language === 'en' ? "Today's Appointments" : 'Agendamentos de Hoje'}</p>
           </div>
         </div>
       </div>
 
       <div className="dashboard-content">
         <div className="appointments-by-status">
-          <h3>Agendamentos de Hoje</h3>
+          <h3>{language === 'en' ? "Today's Appointments" : 'Agendamentos de Hoje'}</h3>
           <div className="status-columns">
             {Object.entries(groupAppointmentsByStatus(recentAppointments)).map(([status, appointments]) => (
               <div key={status} className="status-group">
@@ -281,7 +292,7 @@ const Dashboard = () => {
                       <div className="appointment-details">
                         <div className="appointment-client">{appointment.client_name}</div>
                         <div className="appointment-service">{appointment.services_list}</div>
-                        <div className="appointment-staff">com {appointment.team_member_name}</div>
+                        <div className="appointment-staff">{language === 'en' ? 'with' : 'com'} {appointment.team_member_name}</div>
                       </div>
                     </div>
                   ))}

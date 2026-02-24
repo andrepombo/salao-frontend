@@ -120,11 +120,11 @@ function App() {
           <div className="app-content">
             <Routes>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/clients" element={<ClientsSection />} />
-              <Route path="/team" element={<TeamSection />} />
-              <Route path="/services" element={<ServicesSection />} />
-              <Route path="/appointments" element={<AppointmentsSection />} />
+              <Route path="/dashboard" element={<Dashboard language={language} />} />
+              <Route path="/clients" element={<ClientsSection language={language} />} />
+              <Route path="/team" element={<TeamSection language={language} />} />
+              <Route path="/services" element={<ServicesSection language={language} />} />
+              <Route path="/appointments" element={<AppointmentsSection language={language} />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
           </div>
@@ -133,7 +133,7 @@ function App() {
             <div className="error-toast">
               <div className="error-content">
                 <span className="error-icon">⚠️</span>
-                <span className="error-message">Backend connection failed</span>
+                <span className="error-message">{language === 'en' ? 'Backend connection failed' : 'Falha na conexão com o backend'}</span>
                 <button 
                   className="error-close"
                   onClick={() => setError(null)}

@@ -3,7 +3,7 @@ import DataTable from '../DataTable'
 import MuiCrudForm from '../MuiCrudForm'
 import { apiService } from '../../services/api'
 
-const ServicesSection = () => {
+const ServicesSection = ({ language = 'pt' }) => {
   const [services, setServices] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -11,7 +11,7 @@ const ServicesSection = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const columns = [
-    { key: 'name', label: 'Nome do Serviço' },
+    { key: 'name', label: language === 'en' ? 'Service Name' : 'Nome do Serviço' },
     { key: 'service_type', label: 'Tipo', type: 'badge', badgeColor: (value) => {
       const colors = {
         'cabelo': 'info',
@@ -22,44 +22,44 @@ const ServicesSection = () => {
       }
       return colors[value] || 'default'
     }},
-    { key: 'duration_minutes', label: 'Duração (min)' },
-    { key: 'price', label: 'Preço', type: 'currency' },
-    { key: 'is_active', label: 'Ativo', type: 'boolean' },
-    { key: 'created_at', label: 'Criado em', type: 'date' }
+    { key: 'duration_minutes', label: language === 'en' ? 'Duration (min)' : 'Duração (min)' },
+    { key: 'price', label: language === 'en' ? 'Price' : 'Preço', type: 'currency' },
+    { key: 'is_active', label: language === 'en' ? 'Active' : 'Ativo', type: 'boolean' },
+    { key: 'created_at', label: language === 'en' ? 'Created at' : 'Criado em', type: 'date' }
   ]
 
   const formFields = [
     {
       name: 'name',
-      label: 'Nome do Serviço',
+      label: language === 'en' ? 'Service Name' : 'Nome do Serviço',
       type: 'text',
       required: true,
       placeholder: 'Digite o nome do serviço'
     },
     {
       name: 'service_type',
-      label: 'Tipo de Serviço',
+      label: language === 'en' ? 'Service Type' : 'Tipo de Serviço',
       type: 'select',
       required: true,
       fullWidth: true,
       options: [
-        { value: 'cabelo', label: 'Cabelo' },
-        { value: 'unhas', label: 'Unhas' },
-        { value: 'barba', label: 'Barba' },
-        { value: 'maquiagem', label: 'Maquiagem' },
-        { value: 'pele', label: 'Pele' }
+        { value: 'cabelo', label: language === 'en' ? 'Hair' : 'Cabelo' },
+        { value: 'unhas', label: language === 'en' ? 'Nails' : 'Unhas' },
+        { value: 'barba', label: language === 'en' ? 'Beard' : 'Barba' },
+        { value: 'maquiagem', label: language === 'en' ? 'Makeup' : 'Maquiagem' },
+        { value: 'pele', label: language === 'en' ? 'Skin' : 'Pele' }
       ]
     },
     {
       name: 'description',
-      label: 'Descrição',
+      label: language === 'en' ? 'Description' : 'Descrição',
       type: 'textarea',
       fullWidth: true,
       placeholder: 'Descreva os detalhes do serviço'
     },
     {
       name: 'duration_minutes',
-      label: 'Duração (minutos)',
+      label: language === 'en' ? 'Duration (minutes)' : 'Duração (minutos)',
       type: 'number',
       required: true,
       min: 1,
@@ -69,17 +69,17 @@ const ServicesSection = () => {
     },
     {
       name: 'price',
-      label: 'Preço',
+      label: language === 'en' ? 'Price' : 'Preço',
       type: 'number',
       required: true,
       min: 0,
       step: 0.01,
       placeholder: '50.00',
-      helpText: 'Preço do serviço em reais'
+      helpText: language === 'en' ? 'Service price in Brazilian reais' : 'Preço do serviço em reais'
     },
     {
       name: 'is_active',
-      label: 'Serviço Ativo',
+      label: language === 'en' ? 'Active Service' : 'Serviço Ativo',
       type: 'checkbox',
       defaultValue: true,
       helpText: 'Se este serviço está disponível atualmente'
@@ -117,14 +117,16 @@ const ServicesSection = () => {
   }
 
   const handleDelete = async (service) => {
-    if (window.confirm(`Tem certeza que deseja excluir ${service.name}?`)) {
+    if (window.confirm(language === 'en' 
+      ? `Are you sure you want to delete ${service.name}?`
+      : `Tem certeza que deseja excluir ${service.name}?`)) {
       try {
         await apiService.delete(`/api/services/${service.id}/`)
         setServices(prev => prev.filter(s => s.id !== service.id))
-        alert('Serviço excluído com sucesso!')
+        alert(language === 'en' ? 'Service deleted successfully!' : 'Serviço excluído com sucesso!')
       } catch (error) {
         console.error('Error deleting service:', error)
-        alert('Erro ao excluir serviço. Tente novamente.')
+        alert(language === 'en' ? 'Error deleting service. Please try again.' : 'Erro ao excluir serviço. Tente novamente.')
       }
     }
   }
@@ -144,12 +146,12 @@ const ServicesSection = () => {
         // Update existing service
         const updatedService = await apiService.put(`/api/services/${editingService.id}/`, apiData)
         setServices(prev => prev.map(s => s.id === editingService.id ? updatedService : s))
-        alert('Serviço atualizado com sucesso!')
+        alert(language === 'en' ? 'Service updated successfully!' : 'Serviço atualizado com sucesso!')
       } else {
         // Create new service
         const newService = await apiService.post('/api/services/', apiData)
         setServices(prev => [...prev, newService])
-        alert('Serviço criado com sucesso!')
+        alert(language === 'en' ? 'Service created successfully!' : 'Serviço criado com sucesso!')
       }
       
       setShowForm(false)
@@ -157,7 +159,7 @@ const ServicesSection = () => {
     } catch (error) {
       console.error('Error saving service:', error)
       console.error('Error details:', error.response?.data || error.message)
-      alert('Erro ao salvar serviço. Tente novamente.')
+      alert(language === 'en' ? 'Error saving service. Please try again.' : 'Erro ao salvar serviço. Tente novamente.')
     } finally {
       setIsSubmitting(false)
     }
@@ -171,14 +173,17 @@ const ServicesSection = () => {
   return (
     <div>
       <DataTable
-        title="Serviços"
+        title={language === 'en' ? 'Services' : 'Serviços'}
         columns={columns}
         data={services}
         onAdd={handleAdd}
         onEdit={handleEdit}
         onDelete={handleDelete}
         isLoading={isLoading}
-        emptyMessage="Nenhum serviço cadastrado ainda. Adicione seu primeiro serviço para começar!"
+        emptyMessage={language === 'en' 
+          ? 'No services yet. Add your first service to get started!'
+          : 'Nenhum serviço cadastrado ainda. Adicione seu primeiro serviço para começar!'}
+        language={language}
       />
 
       {showForm && (

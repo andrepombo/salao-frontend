@@ -10,7 +10,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { ptBR } from 'date-fns/locale'
 import './AppointmentsSection.css'
 
-const AppointmentsSection = () => {
+const AppointmentsSection = ({ language = 'pt' }) => {
   const [appointments, setAppointments] = useState([])
   const [clients, setClients] = useState([])
   const [teamMembers, setTeamMembers] = useState([])
@@ -966,7 +966,7 @@ const AppointmentsSection = () => {
           <div className="stat-content">
             <>
               <h3>{cardsStats.totalAppointments}</h3>
-              <p>Total de Agendamentos</p>
+              <p>{language === 'en' ? 'Total Appointments' : 'Total de Agendamentos'}</p>
             </>
           </div>
         </div>
@@ -976,7 +976,7 @@ const AppointmentsSection = () => {
           <div className="stat-content">
             <>
               <h3>{cardsStats.todayAppointments}</h3>
-              <p>Agendamentos de Hoje</p>
+              <p>{language === 'en' ? "Today's Appointments" : 'Agendamentos de Hoje'}</p>
             </>
           </div>
         </div>
@@ -986,7 +986,7 @@ const AppointmentsSection = () => {
           <div className="stat-content">
             <>
               <h3>{cardsStats.confirmedAppointments}</h3>
-              <p>Confirmados</p>
+              <p>{language === 'en' ? 'Confirmed' : 'Confirmados'}</p>
             </>
           </div>
         </div>
@@ -996,7 +996,7 @@ const AppointmentsSection = () => {
           <div className="stat-content">
             <>
               <h3>R$ {typeof cardsStats.totalRevenue === 'number' ? cardsStats.totalRevenue.toFixed(2) : cardsStats.totalRevenue}</h3>
-              <p>Receita Total</p>
+              <p>{language === 'en' ? 'Total Revenue' : 'Receita Total'}</p>
             </>
           </div>
         </div>
@@ -1018,7 +1018,7 @@ const AppointmentsSection = () => {
                       className="mui-select"
                       displayEmpty
                     >
-                      <MenuItem value="">Todos</MenuItem>
+                      <MenuItem value="">{language === 'en' ? 'All' : 'Todos'}</MenuItem>
                       {filter.options.map(option => (
                         <MenuItem key={option.value} value={option.value}>
                           {option.label}
@@ -1029,7 +1029,7 @@ const AppointmentsSection = () => {
                 ) : filter.type === 'dateRange' ? (
                   <div className="date-range-container">
                     <div className="date-range-field mui-date-field">
-                      <span className="mui-date-label">De:</span>
+                      <span className="mui-date-label">{language === 'en' ? 'From:' : 'De:'}</span>
                       <DatePicker
                         value={(activeFilters[filter.key] && activeFilters[filter.key].start) ? 
                           (() => {
@@ -1066,7 +1066,7 @@ const AppointmentsSection = () => {
                       />
                     </div>
                     <div className="date-range-field mui-date-field">
-                      <span className="mui-date-label">Até:</span>
+                      <span className="mui-date-label">{language === 'en' ? 'To:' : 'Até:'}</span>
                       <DatePicker
                         value={(activeFilters[filter.key] && activeFilters[filter.key].end) ? 
                           (() => {
@@ -1117,7 +1117,7 @@ const AppointmentsSection = () => {
                     type="text"
                     value={activeFilters[filter.key] || ''}
                     onChange={(e) => handleFilterChange(filter.key, e.target.value)}
-                    placeholder={filter.placeholder || `Filtrar por ${filter.label}`}
+                    placeholder={filter.placeholder || (language === 'en' ? `Filter by ${filter.label}` : `Filtrar por ${filter.label}`)}
                     className="filter-input"
                   />
                 )}
@@ -1139,7 +1139,7 @@ const AppointmentsSection = () => {
                   setActiveFilters(resetFilters)
                 }}
               >
-                Limpar Filtros
+                {language === 'en' ? 'Clear Filters' : 'Limpar Filtros'}
               </button>
             )}
           </div>
@@ -1147,14 +1147,17 @@ const AppointmentsSection = () => {
       </LocalizationProvider>
 
       <DataTable
-        title="Agendamentos"
+        title={language === 'en' ? 'Appointments' : 'Agendamentos'}
         columns={columns}
         data={filteredAppointments}
         onAdd={handleAdd}
         onEdit={handleEdit}
         onDelete={handleDelete}
         isLoading={tableLoading}
-        emptyMessage="Nenhum agendamento encontrado. Crie seu primeiro agendamento para começar!"
+        emptyMessage={language === 'en'
+          ? 'No appointments found. Create your first appointment to get started!'
+          : 'Nenhum agendamento encontrado. Crie seu primeiro agendamento para começar!'}
+        language={language}
       />
 
       {showForm && (

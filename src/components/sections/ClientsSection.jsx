@@ -4,7 +4,7 @@ import MuiCrudForm from '../MuiCrudForm'
 import { apiService } from '../../services/api'
 import { trackClient } from '../../services/analytics'
 
-const ClientsSection = () => {
+const ClientsSection = ({ language = 'pt' }) => {
   const [clients, setClients] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -12,10 +12,10 @@ const ClientsSection = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const columns = [
-    { key: 'name', label: 'Nome' },
+    { key: 'name', label: language === 'en' ? 'Name' : 'Nome' },
     { 
       key: 'formatted_phone', 
-      label: 'Telefone',
+      label: language === 'en' ? 'Phone' : 'Telefone',
       type: 'custom',
       render: (value, row) => {
         // Use formatted_phone from API if available, otherwise format the raw phone
@@ -31,28 +31,28 @@ const ClientsSection = () => {
       }
     },
     { key: 'email', label: 'Email' },
-    { key: 'gender', label: 'Gênero' },
-    { key: 'birthday', label: 'Aniversário', type: 'date' },
-    { key: 'created_at', label: 'Criado em', type: 'date' }
+    { key: 'gender', label: language === 'en' ? 'Gender' : 'Gênero' },
+    { key: 'birthday', label: language === 'en' ? 'Birthday' : 'Aniversário', type: 'date' },
+    { key: 'created_at', label: language === 'en' ? 'Created at' : 'Criado em', type: 'date' }
   ]
 
   const formFields = [
     {
       name: 'name',
-      label: 'Nome Completo',
+      label: language === 'en' ? 'Full Name' : 'Nome Completo',
       type: 'text',
       required: true,
       placeholder: 'Digite o nome do cliente'
     },
     {
       name: 'phone',
-      label: 'Número de Telefone',
+      label: language === 'en' ? 'Phone Number' : 'Número de Telefone',
       type: 'tel',
       required: true,
       placeholder: '11987654321',
       validation: (value) => {
         const phoneRegex = /^\d{11}$/
-        return phoneRegex.test(value) || 'Por favor, digite exatamente 11 dígitos'
+        return phoneRegex.test(value) || (language === 'en' ? 'Please enter exactly 11 digits' : 'Por favor, digite exatamente 11 dígitos')
       },
       format: (value) => {
         // Remove all non-digits
@@ -78,20 +78,20 @@ const ClientsSection = () => {
     },
     {
       name: 'address',
-      label: 'Endereço',
+      label: language === 'en' ? 'Address' : 'Endereço',
       type: 'textarea',
       fullWidth: true,
       placeholder: 'Digite o endereço do cliente'
     },
     {
       name: 'birthday',
-      label: 'Aniversário',
+      label: language === 'en' ? 'Birthday' : 'Aniversário',
       type: 'date',
       helpText: 'Data de nascimento do cliente'
     },
     {
       name: 'gender',
-      label: 'Gênero',
+      label: language === 'en' ? 'Gender' : 'Gênero',
       type: 'select',
       fullWidth: true,
       options: [
@@ -133,7 +133,9 @@ const ClientsSection = () => {
   }
 
   const handleDelete = async (client) => {
-    if (window.confirm(`Tem certeza que deseja excluir ${client.name}?`)) {
+    if (window.confirm(language === 'en' 
+      ? `Are you sure you want to delete ${client.name}?` 
+      : `Tem certeza que deseja excluir ${client.name}?`)) {
       try {
         await apiService.delete(`/api/clients/${client.id}/`)
         setClients(prev => prev.filter(c => c.id !== client.id))
@@ -141,10 +143,10 @@ const ClientsSection = () => {
         // Track client deletion
         trackClient('Deleted', client)
         
-        alert('Cliente excluído com sucesso!')
+        alert(language === 'en' ? 'Client deleted successfully!' : 'Cliente excluído com sucesso!')
       } catch (error) {
         console.error('Error deleting client:', error)
-        alert('Erro ao excluir cliente. Tente novamente.')
+        alert(language === 'en' ? 'Error deleting client. Please try again.' : 'Erro ao excluir cliente. Tente novamente.')
       }
     }
   }
@@ -195,7 +197,7 @@ const ClientsSection = () => {
     } catch (error) {
       console.error('Erro ao salvar cliente:', error)
       console.error('Error details:', error.response?.data || error.message)
-      alert('Erro ao salvar cliente. Tente novamente.')
+      alert(language === 'en' ? 'Error saving client. Please try again.' : 'Erro ao salvar cliente. Tente novamente.')
     } finally {
       setIsSubmitting(false)
     }
@@ -209,14 +211,17 @@ const ClientsSection = () => {
   return (
     <div>
       <DataTable
-        title="Clientes"
+        title={language === 'en' ? 'Clients' : 'Clientes'}
         columns={columns}
         data={clients}
         onAdd={handleAdd}
         onEdit={handleEdit}
         onDelete={handleDelete}
         isLoading={isLoading}
-        emptyMessage="Nenhum cliente cadastrado ainda. Adicione seu primeiro cliente para começar!"
+        emptyMessage={language === 'en' 
+          ? 'No clients yet. Add your first client to get started!'
+          : 'Nenhum cliente cadastrado ainda. Adicione seu primeiro cliente para começar!'}
+        language={language}
       />
 
       {showForm && (

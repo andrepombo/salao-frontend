@@ -4,7 +4,7 @@ import MuiCrudForm from '../MuiCrudForm'
 import { apiService } from '../../services/api'
 import { trackTeamMember } from '../../services/analytics'
 
-const TeamSection = () => {
+const TeamSection = ({ language = 'pt' }) => {
   const [teamMembers, setTeamMembers] = useState([])
   const [services, setServices] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -13,10 +13,10 @@ const TeamSection = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const columns = [
-    { key: 'name', label: 'Nome' },
+    { key: 'name', label: language === 'en' ? 'Name' : 'Nome' },
     { 
       key: 'formatted_phone', 
-      label: 'Telefone',
+      label: language === 'en' ? 'Phone' : 'Telefone',
       type: 'custom',
       render: (value, row) => {
         // Use formatted_phone from API if available, otherwise format the raw phone
@@ -32,15 +32,15 @@ const TeamSection = () => {
       }
     },
     { key: 'email', label: 'Email' },
-    { key: 'hire_date', label: 'Data de Contratação', type: 'date' },
-    { key: 'is_active', label: 'Status', type: 'boolean' },
-    { key: 'specialties_count', label: 'Especialidades' }
+    { key: 'hire_date', label: language === 'en' ? 'Hire Date' : 'Data de Contratação', type: 'date' },
+    { key: 'is_active', label: language === 'en' ? 'Status' : 'Status', type: 'boolean' },
+    { key: 'specialties_count', label: language === 'en' ? 'Specialties' : 'Especialidades' }
   ]
 
   const formFields = [
     {
       name: 'name',
-      label: 'Nome Completo',
+      label: language === 'en' ? 'Full Name' : 'Nome Completo',
       type: 'text',
       required: true,
       placeholder: 'Digite o nome do profissional'
@@ -53,7 +53,7 @@ const TeamSection = () => {
       placeholder: '11987654321',
       validation: (value) => {
         const phoneRegex = /^\d{11}$/
-        return phoneRegex.test(value) || 'Por favor, digite exatamente 11 dígitos'
+        return phoneRegex.test(value) || (language === 'en' ? 'Please enter exactly 11 digits' : 'Por favor, digite exatamente 11 dígitos')
       },
       format: (value) => {
         // Remove all non-digits
@@ -79,28 +79,28 @@ const TeamSection = () => {
     },
     {
       name: 'address',
-      label: 'Endereço',
+      label: language === 'en' ? 'Address' : 'Endereço',
       type: 'textarea',
       fullWidth: true,
       placeholder: 'Digite o endereço do profissional'
     },
     {
       name: 'hire_date',
-      label: 'Data de Contratação',
+      label: language === 'en' ? 'Hire Date' : 'Data de Contratação',
       type: 'date',
       required: true,
       helpText: 'Data em que o profissional foi contratado'
     },
     {
       name: 'is_active',
-      label: 'Status Ativo',
+      label: language === 'en' ? 'Active Status' : 'Status Ativo',
       type: 'checkbox',
       defaultValue: true,
       helpText: 'Se este profissional está atualmente ativo'
     },
     {
       name: 'specialties',
-      label: 'Especialidades',
+      label: language === 'en' ? 'Specialties' : 'Especialidades',
       type: 'multiselect',
       required: false,
       options: (services || []).map(service => ({ 
@@ -108,7 +108,9 @@ const TeamSection = () => {
         label: service.name ? String(service.name) : `Serviço ${service.id}` 
       })),
       placeholder: 'Selecione as especialidades do profissional',
-      helpText: 'Serviços que este profissional pode realizar'
+      helpText: language === 'en' 
+        ? 'Services this professional can perform'
+        : 'Serviços que este profissional pode realizar'
     }
   ]
 
@@ -174,7 +176,9 @@ const TeamSection = () => {
   }
 
   const handleDelete = async (member) => {
-    if (window.confirm(`Tem certeza que deseja excluir ${member.name}?`)) {
+    if (window.confirm(language === 'en' 
+      ? `Are you sure you want to delete ${member.name}?`
+      : `Tem certeza que deseja excluir ${member.name}?`)) {
       try {
         await apiService.delete(`/api/team/${member.id}/`)
         setTeamMembers(prev => prev.filter(m => m.id !== member.id))
@@ -182,10 +186,10 @@ const TeamSection = () => {
         // Track team member deletion
         trackTeamMember('Deleted', member)
         
-        alert('Profissional excluído com sucesso!')
+        alert(language === 'en' ? 'Professional deleted successfully!' : 'Profissional excluído com sucesso!')
       } catch (error) {
         console.error('Error deleting team member:', error)
-        alert('Erro ao excluir profissional. Tente novamente.')
+        alert(language === 'en' ? 'Error deleting professional. Please try again.' : 'Erro ao excluir profissional. Tente novamente.')
       }
     }
   }
@@ -217,7 +221,7 @@ const TeamSection = () => {
         // Track team member update
         trackTeamMember('Updated', updatedMember)
         
-        alert('Profissional atualizado com sucesso!')
+        alert(language === 'en' ? 'Professional updated successfully!' : 'Profissional atualizado com sucesso!')
       } else {
         // Create new team member
         const newMember = await apiService.post('/api/team/', apiData)
@@ -226,7 +230,7 @@ const TeamSection = () => {
         // Track team member creation
         trackTeamMember('Created', newMember)
         
-        alert('Profissional criado com sucesso!')
+        alert(language === 'en' ? 'Professional created successfully!' : 'Profissional criado com sucesso!')
       }
       
       setShowForm(false)
@@ -234,7 +238,7 @@ const TeamSection = () => {
     } catch (error) {
       console.error('Error saving team member:', error)
       console.error('Error details:', error.response?.data || error.message)
-      alert('Erro ao salvar profissional. Tente novamente.')
+      alert(language === 'en' ? 'Error saving professional. Please try again.' : 'Erro ao salvar profissional. Tente novamente.')
     } finally {
       setIsSubmitting(false)
     }
@@ -248,14 +252,17 @@ const TeamSection = () => {
   return (
     <div>
       <DataTable
-        title="Equipe"
+        title={language === 'en' ? 'Team' : 'Equipe'}
         columns={columns}
         data={teamMembers}
         onAdd={handleAdd}
         onEdit={handleEdit}
         onDelete={handleDelete}
         isLoading={isLoading}
-        emptyMessage="Nenhum profissional cadastrado ainda. Adicione seu primeiro profissional para começar!"
+        emptyMessage={language === 'en' 
+          ? 'No professionals yet. Add your first professional to get started!'
+          : 'Nenhum profissional cadastrado ainda. Adicione seu primeiro profissional para começar!'}
+        language={language}
       />
 
       {showForm && (

@@ -16,7 +16,8 @@ const DataTable = ({
   isLoading = false,
   emptyMessage = "Nenhum dado disponível",
   filters = [],
-  onFilterChange = null
+  onFilterChange = null,
+  language = 'pt'
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [sortColumn, setSortColumn] = useState('')
@@ -220,11 +221,13 @@ const DataTable = ({
       const month = parseInt(parts[1]) - 1 // Month is 0-indexed
       const day = parseInt(parts[2])
       const localDate = new Date(year, month, day)
-      return localDate.toLocaleDateString('pt-BR')
+      const locale = language === 'en' ? 'en-US' : 'pt-BR'
+      return localDate.toLocaleDateString(locale)
     }
     
     // Fallback for other date formats
-    return new Date(dateString).toLocaleDateString('pt-BR')
+    const locale = language === 'en' ? 'en-US' : 'pt-BR'
+    return new Date(dateString).toLocaleDateString(locale)
   }
 
   const renderCellValue = (value, column) => {
@@ -254,13 +257,13 @@ const DataTable = ({
       <div className="data-table-header">
         <div className="header-left">
           <h2 className="table-title">{title}</h2>
-          <span className="item-count">{filteredData.length} itens</span>
+          <span className="item-count">{filteredData.length} {language === 'en' ? 'items' : 'itens'}</span>
         </div>
         <div className="header-right">
           <div className="search-box">
             <input
               type="text"
-              placeholder="Pesquisar..."
+              placeholder={language === 'en' ? 'Search...' : 'Pesquisar...'}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="search-input"
@@ -293,7 +296,7 @@ const DataTable = ({
                     className="mui-select"
                     displayEmpty
                   >
-                    <MenuItem value="">Todos</MenuItem>
+                    <MenuItem value="">{language === 'en' ? 'All' : 'Todos'}</MenuItem>
                     {filter.options.map(option => (
                       <MenuItem key={option.value} value={option.value}>
                         {option.label}
@@ -304,7 +307,7 @@ const DataTable = ({
               ) : filter.type === 'dateRange' ? (
                 <div className="date-range-container">
                   <div className="date-range-field mui-date-field">
-                    <span className="mui-date-label">De:</span>
+                    <span className="mui-date-label">{language === 'en' ? 'From:' : 'De:'}</span>
                     <DatePicker
                       value={(activeFilters[filter.key] && activeFilters[filter.key].start) ? 
                         (() => {
@@ -343,7 +346,7 @@ const DataTable = ({
                     />
                   </div>
                   <div className="date-range-field mui-date-field">
-                    <span className="mui-date-label">Até:</span>
+                    <span className="mui-date-label">{language === 'en' ? 'To:' : 'Até:'}</span>
                     <DatePicker
                       value={(activeFilters[filter.key] && activeFilters[filter.key].end) ? 
                         (() => {
@@ -396,7 +399,7 @@ const DataTable = ({
                   type="text"
                   value={activeFilters[filter.key] || ''}
                   onChange={(e) => handleFilterChange(filter.key, e.target.value)}
-                  placeholder={filter.placeholder || `Filtrar por ${filter.label}`}
+                  placeholder={filter.placeholder || (language === 'en' ? `Filter by ${filter.label}` : `Filtrar por ${filter.label}`)}
                   className="filter-input"
                 />
               )}
@@ -414,7 +417,7 @@ const DataTable = ({
                 if (onFilterChange) onFilterChange(resetFilters)
               }}
             >
-              Limpar Filtros
+              {language === 'en' ? 'Clear Filters' : 'Limpar Filtros'}
             </button>
           )}
         </div>
@@ -423,16 +426,21 @@ const DataTable = ({
       {isLoading ? (
         <div className="loading-state">
           <div className="loading-spinner"></div>
-          <p>Carregando...</p>
+          <p>{language === 'en' ? 'Loading...' : 'Carregando...'}</p>
         </div>
       ) : sortedData.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon">📭</div>
-          <h3>Nenhum {title.toLowerCase()} encontrado</h3>
-          <p>{searchTerm ? `Nenhum resultado para "${searchTerm}"` : emptyMessage}</p>
+          <h3>{language === 'en' ? `No ${title.toLowerCase()} found` : `Nenhum ${title.toLowerCase()} encontrado`}</h3>
+          <p>{searchTerm 
+            ? (language === 'en' 
+                ? `No results for "${searchTerm}"` 
+                : `Nenhum resultado para "${searchTerm}"`)
+            : emptyMessage}
+          </p>
           {!searchTerm && (
             <button className="btn btn-primary" onClick={onAdd}>
-              Adicionar Primeiro {title.slice(0, -1)}
+              {language === 'en' ? 'Add First' : 'Adicionar Primeiro'} {title.slice(0, -1)}
             </button>
           )}
         </div>
@@ -459,7 +467,7 @@ const DataTable = ({
                     </div>
                   </th>
                 ))}
-                <th className="table-header actions-header">Ações</th>
+                <th className="table-header actions-header">{language === 'en' ? 'Actions' : 'Ações'}</th>
               </tr>
             </thead>
             <tbody>
@@ -475,7 +483,7 @@ const DataTable = ({
                       <button
                         className="btn btn-sm btn-warning"
                         onClick={() => onEdit(item)}
-                        title="Editar"
+                        title={language === 'en' ? 'Edit' : 'Editar'}
                         style={{ 
                           fontSize: '16px', 
                           fontWeight: 'bold', 
@@ -489,7 +497,7 @@ const DataTable = ({
                       <button
                         className="btn btn-sm btn-danger"
                         onClick={() => onDelete(item)}
-                        title="Excluir"
+                        title={language === 'en' ? 'Delete' : 'Excluir'}
                         style={{ color: 'white', fontSize: '14px' }}
                       >
                         ✖
