@@ -48,6 +48,29 @@ const AppointmentsSection = ({ language = 'pt' }) => {
     }
   }
 
+  // Function to translate service names for demo English UI
+  const translateServiceName = (name) => {
+    if (!name || language !== 'en') return name
+    const translations = {
+      'Corte Feminino': "Women's Haircut",
+      'Corte Masculino': "Men's Haircut",
+      'Escova': 'Blow Dry',
+      'Coloração': 'Hair Coloring',
+      'Manicure': 'Manicure',
+      'Pedicure': 'Pedicure'
+    }
+    return translations[name] || name
+  }
+
+  // Helper to translate a comma-separated services_list string
+  const translateServicesList = (servicesList) => {
+    if (!servicesList || language !== 'en') return servicesList
+    return servicesList
+      .split(',')
+      .map(name => translateServiceName(name.trim()))
+      .join(', ')
+  }
+
   // Function to get available services for a selected team member
   const getAvailableServices = (teamMemberId) => {
     if (!teamMemberId || !teamMembers || !services) return []
@@ -59,7 +82,7 @@ const AppointmentsSection = ({ language = 'pt' }) => {
       .filter(service => teamMember.specialties.includes(service.id))
       .map(service => ({ 
         value: service.id, 
-        label: `${service.name} - R$ ${parseFloat(service.price || 0).toFixed(2)}` 
+        label: `${translateServiceName(service.name)} - R$ ${parseFloat(service.price || 0).toFixed(2)}` 
       }))
   }
 
@@ -161,7 +184,11 @@ const AppointmentsSection = ({ language = 'pt' }) => {
         return `${minutes}min`;
       }
     },
-    { key: 'services_list', label: language === 'en' ? 'Services' : 'Serviços' }
+    { 
+      key: 'services_list',
+      label: language === 'en' ? 'Services' : 'Serviços',
+      render: (value) => translateServicesList(value)
+    }
   ], [language])
 
   const formFields = useMemo(() => [
@@ -565,7 +592,7 @@ const AppointmentsSection = ({ language = 'pt' }) => {
           const servicePrice = parseFloat(service.price || 0)
           console.log(`Adding price: ${servicePrice} (from ${service.price})`)
           totalPrice += servicePrice
-          serviceNames.push(service.name)
+          serviceNames.push(translateServiceName(service.name))
         }
       })
       
@@ -811,7 +838,7 @@ const AppointmentsSection = ({ language = 'pt' }) => {
     return serviceIds
       .map(id => {
         const service = services.find(s => s.id === parseInt(id))
-        return service ? service.name : ''
+        return service ? translateServiceName(service.name) : ''
       })
       .filter(name => name)
       .join(', ')

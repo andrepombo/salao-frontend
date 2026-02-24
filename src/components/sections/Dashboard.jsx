@@ -214,6 +214,26 @@ const Dashboard = ({ language = 'pt' }) => {
     return labels[status] || status
   }
 
+  // Translate service names inside services_list for English demo UI
+  const translateServiceNamesList = (servicesList) => {
+    if (!servicesList || language !== 'en') return servicesList
+    const translations = {
+      'Corte Feminino': "Women's Haircut",
+      'Corte Masculino': "Men's Haircut",
+      'Escova': 'Blow Dry',
+      'Coloração': 'Hair Coloring',
+      'Manicure': 'Manicure',
+      'Pedicure': 'Pedicure'
+    }
+    return servicesList
+      .split(',')
+      .map(name => {
+        const trimmed = name.trim()
+        return translations[trimmed] || trimmed
+      })
+      .join(', ')
+  }
+
   const formatTime = (timeString) => {
     if (!timeString) return ''
     // Remove seconds from time format (HH:MM:SS -> HH:MM)
@@ -309,7 +329,7 @@ const Dashboard = ({ language = 'pt' }) => {
                       <div className="appointment-time">{formatTime(appointment.appointment_time)}</div>
                       <div className="appointment-details">
                         <div className="appointment-client">{appointment.client_name}</div>
-                        <div className="appointment-service">{appointment.services_list}</div>
+                        <div className="appointment-service">{translateServiceNamesList(appointment.services_list)}</div>
                         <div className="appointment-staff">{language === 'en' ? 'with' : 'com'} {appointment.team_member_name}</div>
                       </div>
                     </div>

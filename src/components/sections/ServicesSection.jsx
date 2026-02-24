@@ -10,18 +10,58 @@ const ServicesSection = ({ language = 'pt' }) => {
   const [editingService, setEditingService] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Frontend-only demo translations for service names
+  const translateServiceName = (name) => {
+    if (!name || language !== 'en') return name
+    const translations = {
+      'Barba completa': 'Full Beard',
+      'Coloração completa': 'Full Hair Coloring',
+      'Corte feminino': "Women\'s Haircut",
+      'Corte masculino': "Men\'s Haircut",
+      'Maquiagem social': 'Social Makeup',
+      'Limpeza de pele': 'Facial Cleansing',
+      'Escova': 'Blow Dry',
+      'Manicure': 'Manicure',
+      'Pedicure': 'Pedicure'
+    }
+    return translations[name] || name
+  }
+
+  // Frontend-only demo translations for service types (badge text)
+  const translateServiceType = (type) => {
+    if (!type || language !== 'en') return type
+    const translations = {
+      'cabelo': 'Hair',
+      'unhas': 'Nails',
+      'barba': 'Beard',
+      'maquiagem': 'Makeup',
+      'pele': 'Skin'
+    }
+    return translations[type] || type
+  }
+
   const columns = [
-    { key: 'name', label: language === 'en' ? 'Service Name' : 'Nome do Serviço' },
-    { key: 'service_type', label: 'Tipo', type: 'badge', badgeColor: (value) => {
-      const colors = {
-        'cabelo': 'info',
-        'unhas': 'success',
-        'barba': 'warning',
-        'maquiagem': 'danger',
-        'pele': 'default'
+    { 
+      key: 'name', 
+      label: language === 'en' ? 'Service Name' : 'Nome do Serviço',
+      render: (value) => translateServiceName(value)
+    },
+    { 
+      key: 'service_type', 
+      label: language === 'en' ? 'Type' : 'Tipo', 
+      type: 'badge', 
+      render: (value) => translateServiceType(value),
+      badgeColor: (value) => {
+        const colors = {
+          'cabelo': 'info',
+          'unhas': 'success',
+          'barba': 'warning',
+          'maquiagem': 'danger',
+          'pele': 'default'
+        }
+        return colors[value] || 'default'
       }
-      return colors[value] || 'default'
-    }},
+    },
     { key: 'duration_minutes', label: language === 'en' ? 'Duration (min)' : 'Duração (min)' },
     { key: 'price', label: language === 'en' ? 'Price' : 'Preço', type: 'currency' },
     { key: 'is_active', label: language === 'en' ? 'Active' : 'Ativo', type: 'boolean' },
