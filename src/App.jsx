@@ -29,6 +29,13 @@ function App() {
   const [connectionStatus, setConnectionStatus] = useState('testing')
   const [backendData, setBackendData] = useState(null)
   const [error, setError] = useState(null)
+  const [language, setLanguage] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = window.localStorage.getItem('language')
+      return stored === 'en' ? 'en' : 'pt'
+    }
+    return 'pt'
+  })
 
   useEffect(() => {
     testBackendConnection()
@@ -68,6 +75,18 @@ function App() {
     }
   }
 
+  const toggleLanguage = () => {
+    setLanguage(prev => {
+      const next = prev === 'pt' ? 'en' : 'pt'
+      if (typeof window !== 'undefined') {
+        try {
+          window.localStorage.setItem('language', next)
+        } catch (e) {}
+      }
+      return next
+    })
+  }
+
   return (
     <Router>
       <div className="app">
@@ -75,8 +94,29 @@ function App() {
         <Sidebar 
           connectionStatus={connectionStatus}
           onRetryConnection={testBackendConnection}
+          language={language}
         />
         <main className="app-main">
+          <header className="app-header">
+            <button
+              type="button"
+              className="lang-toggle-btn"
+              onClick={toggleLanguage}
+              aria-label={language === 'en' ? 'Switch to Portuguese' : 'Mudar para Inglês'}
+            >
+              {language === 'en' ? (
+                <>
+                  <span>PT</span>
+                  <span>🇧🇷</span>
+                </>
+              ) : (
+                <>
+                  <span>EN</span>
+                  <span>🇬🇧</span>
+                </>
+              )}
+            </button>
+          </header>
           <div className="app-content">
             <Routes>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />

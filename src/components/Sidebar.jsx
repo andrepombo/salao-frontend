@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import './Sidebar.css'
 
-const Sidebar = ({ connectionStatus, onRetryConnection }) => {
+const Sidebar = ({ connectionStatus, onRetryConnection, language = 'pt' }) => {
   const [isCollapsed, setIsCollapsed] = useState(false)
 
   const location = useLocation()
@@ -11,7 +11,7 @@ const Sidebar = ({ connectionStatus, onRetryConnection }) => {
     {
       id: 'dashboard',
       path: '/dashboard',
-      name: 'Painel',
+      name: language === 'en' ? 'Dashboard' : 'Painel',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
@@ -26,7 +26,7 @@ const Sidebar = ({ connectionStatus, onRetryConnection }) => {
     {
       id: 'clients',
       path: '/clients',
-      name: 'Clientes',
+      name: language === 'en' ? 'Clients' : 'Clientes',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
@@ -41,7 +41,7 @@ const Sidebar = ({ connectionStatus, onRetryConnection }) => {
     {
       id: 'team',
       path: '/team',
-      name: 'Equipe',
+      name: language === 'en' ? 'Team' : 'Equipe',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
@@ -56,7 +56,7 @@ const Sidebar = ({ connectionStatus, onRetryConnection }) => {
     {
       id: 'services',
       path: '/services',
-      name: 'Serviços',
+      name: language === 'en' ? 'Services' : 'Serviços',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
@@ -71,7 +71,7 @@ const Sidebar = ({ connectionStatus, onRetryConnection }) => {
     {
       id: 'appointments',
       path: '/appointments',
-      name: 'Agendamentos',
+      name: language === 'en' ? 'Appointments' : 'Agendamentos',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
@@ -144,7 +144,9 @@ const Sidebar = ({ connectionStatus, onRetryConnection }) => {
       <div className="sidebar-footer">
         <div className="user-info">
           <span className="user-icon">👤</span>
-          {!isCollapsed && <span className="user-name">Administrador</span>}
+          {!isCollapsed && (
+            <span className="user-name">{language === 'en' ? 'Administrator' : 'Administrador'}</span>
+          )}
         </div>
       </div>
     </div>
